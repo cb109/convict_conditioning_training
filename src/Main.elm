@@ -594,48 +594,6 @@ viewTrainingAddRepetitionButton training =
         ]
 
 
-
--- viewTrainedExercise2 model =
---     div [ class "columns" ]
---         [ div [ class "column is-two-fifths" ]
---             [ div [ class "columns is-mobile" ]
---                 [ div [ class "column is-narrow" ]
---                     [ p [ class "title is-1 has-text-grey-lighter" ]
---                         [ text "1" ]
---                     ]
---                 , div [ class "column" ]
---                     [ p [ class "title is-4" ]
---                         [ text "Pull-Ups" ]
---                     , p [ class "subtitle is-6" ]
---                         [ text "Vertical pull" ]
---                     ]
---                 ]
---             ]
---         , div [ class "column" ]
---             [ div [ class "tags" ]
---                 [ span [ class "tag is-large" ]
---                     [ text "20" ]
---                 , span [ class "tag is-large is-paddingless" ]
---                     [ button [ class "button is-danger" ]
---                         [ span [ class "icon" ]
---                             [ i [ class "fas fa-times" ]
---                                 []
---                             ]
---                         ]
---                     ]
---                 , button [ class "button is-success is-inverted has-margin-bottom-7" ]
---                     [ span [ class "icon" ]
---                         [ i [ class "fas fa-plus" ]
---                             []
---                         ]
---                     , span []
---                         [ text "Add Set" ]
---                     ]
---                 ]
---             ]
---         ]
-
-
 viewBody : Model -> Html Msg
 viewBody model =
     section []
