@@ -284,16 +284,21 @@ update msg model =
         AddTraining exercise level ->
             let
                 training =
-                    Training 101 exercise.id level.id []
+                    Training (generateNewTrainingId model.trainings) exercise.id level.id []
             in
             ( { model
-                | trainings = training :: trainings
+                | trainings = training :: model.trainings
               }
             , Cmd.none
             )
 
         AddRepetition training repetition ->
             ( addRepetitionToTraining model training repetition, Cmd.none )
+
+
+generateNewTrainingId : List Training -> Int
+generateNewTrainingId trainings_ =
+    Maybe.withDefault 0 (List.maximum (List.map (\t -> t.id) trainings_)) + 1
 
 
 addRepetitionToTraining : Model -> Training -> Int -> Model
@@ -431,6 +436,13 @@ viewButtonsAddExerciseConfirmAbort : Model -> Html Msg
 viewButtonsAddExerciseConfirmAbort model =
     div [ class "buttons is-centered" ]
         [ button
+            [ class "button is-medium is-danger is-inverted"
+            , onClick ToggleShowDropdowns
+            ]
+            [ span [ class "icon" ] [ i [ class "fas fa-times" ] [] ]
+            , span [] [ text "Close" ]
+            ]
+        , button
             [ class "button is-medium is-success is-inverted"
             , disabled (model.chosenLevel == defaultLevel)
             , onClick (AddTraining model.chosenExercise model.chosenLevel)
@@ -438,13 +450,6 @@ viewButtonsAddExerciseConfirmAbort model =
             [ span [ class "icon" ]
                 [ i [ class "fas fa-check" ] [] ]
             , span [] [ text "Add" ]
-            ]
-        , button
-            [ class "button is-medium is-danger is-inverted"
-            , onClick ToggleShowDropdowns
-            ]
-            [ span [ class "icon" ] [ i [ class "fas fa-times" ] [] ]
-            , span [] [ text "Cancel" ]
             ]
         ]
 
