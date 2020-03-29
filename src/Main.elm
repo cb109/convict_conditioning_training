@@ -473,8 +473,8 @@ viewDateSubheader model =
         ]
 
 
-viewTraining : Training -> Html Msg
-viewTraining training =
+viewTraining : Int -> Int -> Training -> Html Msg
+viewTraining amountTrainings index training =
     let
         label =
             getTrainingLabel training
@@ -484,26 +484,39 @@ viewTraining training =
 
         sublabel =
             getTrainingSublabel training
+
+        isLast =
+            index == amountTrainings - 1
+
+        divider =
+            if isLast then
+                span [] []
+
+            else
+                hr [] []
     in
-    div [ class "columns" ]
-        [ div [ class "column is-two-fifths" ]
-            [ div [ class "columns is-mobile" ]
-                [ div [ class "column is-narrow" ]
-                    [ p [ class "title is-1 has-text-grey-lighter" ]
-                        [ text level ]
-                    ]
-                , div [ class "column" ]
-                    [ p [ class "title is-4" ]
-                        [ text label ]
-                    , p [ class "subtitle is-6" ]
-                        [ text sublabel ]
+    div []
+        [ div [ class "columns" ]
+            [ div [ class "column is-two-fifths" ]
+                [ div [ class "columns is-mobile" ]
+                    [ div [ class "column is-narrow" ]
+                        [ p [ class "title is-1 has-text-grey-lighter" ]
+                            [ text level ]
+                        ]
+                    , div [ class "column" ]
+                        [ p [ class "title is-4" ]
+                            [ text label ]
+                        , p [ class "subtitle is-6" ]
+                            [ text sublabel ]
+                        ]
                     ]
                 ]
+            , div [ class "column" ]
+                [ div [ class "tags" ]
+                    (viewTrainingTags training)
+                ]
             ]
-        , div [ class "column" ]
-            [ div [ class "tags" ]
-                (viewTrainingTags training)
-            ]
+        , divider
         ]
 
 
@@ -594,11 +607,7 @@ viewBody model =
             , div [ class "box has-margin-left-6" ]
                 [ ul []
                     [ li []
-                        (List.map viewTraining model.trainings)
-
-                    -- , hr [] []
-                    -- , li []
-                    --     [ viewTrainedExercise2 model ]
+                        (List.indexedMap (viewTraining (List.length model.trainings)) model.trainings)
                     ]
                 ]
             ]
