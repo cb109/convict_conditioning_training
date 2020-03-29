@@ -10,6 +10,10 @@ import Html.Events exposing (onClick)
 ---- MODEL ----
 
 
+type alias Item a =
+    { a | id : Int, name : String }
+
+
 type alias Level =
     { id : Int
     , name : String
@@ -23,12 +27,37 @@ type alias Exercise =
     }
 
 
+getListItemAt : List a -> Int -> Maybe a
+getListItemAt things index =
+    things
+        |> List.drop (index - 1)
+        |> List.head
+
+
+defaultLevel : Level
+defaultLevel =
+    { id = 0
+    , name = "Choose level"
+    }
+
+
+defaultExercise : Exercise
+defaultExercise =
+    { id = 0
+    , name = "Choose exercise"
+    , levels =
+        []
+    }
+
+
 exercises : List Exercise
 exercises =
     [ { id = 1
       , name = "Kniebeuge"
       , levels =
-            [ { id = 10, name = "Schulterstand Kniebeuge" }
+            [ { id = 10
+              , name = "Schulterstand Kniebeuge"
+              }
             , { id = 11, name = "Klappmesser Kniebeuge" }
             , { id = 12, name = "Gestützte Kniebeuge" }
             , { id = 13, name = "Halbe Kniebeuge" }
@@ -118,34 +147,12 @@ exercises =
     ]
 
 
-getListItemAt : List a -> Int -> Maybe a
-getListItemAt things index =
-    things
-        |> List.drop (index - 1)
-        |> List.head
-
-
-defaultExercise : Maybe Exercise
-defaultExercise =
-    getListItemAt exercises 1
-
-
-defaultLevel : Maybe Level
-defaultLevel =
-    case defaultExercise of
-        Just exercise ->
-            getListItemAt exercise.levels 1
-
-        Nothing ->
-            Nothing
-
-
 type alias Model =
     { exercises : List Exercise
     , dropdownActiveExercise : Bool
     , dropdownActiveLevel : Bool
-    , chosenExercise : Maybe Exercise
-    , chosenLevel : Maybe Level
+    , chosenExercise : Exercise
+    , chosenLevel : Level
     }
 
 
@@ -168,6 +175,8 @@ init =
 type Msg
     = ToggleDropdownExercise
     | ToggleDropdownLevel
+    | SelectExercise Exercise
+    | SelectLevel Level
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -189,13 +198,28 @@ update msg model =
             , Cmd.none
             )
 
+        SelectExercise exercise ->
+            ( { model
+                | chosenExercise = exercise
+                , chosenLevel = defaultLevel
+              }
+            , Cmd.none
+            )
+
+        SelectLevel level ->
+            ( { model
+                | chosenLevel = level
+              }
+            , Cmd.none
+            )
+
 
 
 ---- VIEW ----
 
 
 viewHeader : Model -> Html Msg
-viewHeader model =
+viewHeader _ =
     section [ class "hero is-small is-info has-text-centered" ]
         [ div [ class "hero-body" ]
             [ div [ class "container" ]
@@ -220,6 +244,28 @@ viewButtonAddExercise model =
         ]
 
 
+viewDropdownItemExercise : Exercise -> Exercise -> Html Msg
+viewDropdownItemExercise chosenExercise exercise =
+    a
+        [ class "dropdown-item"
+        , classList
+            [ ( "is-active", exercise.id == chosenExercise.id ) ]
+        , onClick (SelectExercise exercise)
+        ]
+        [ text exercise.name ]
+
+
+viewDropdownItemLevel : Level -> Level -> Html Msg
+viewDropdownItemLevel chosenLevel level =
+    a
+        [ class "dropdown-item"
+        , classList
+            [ ( "is-active", level.id == chosenLevel.id ) ]
+        , onClick (SelectLevel level)
+        ]
+        [ text level.name ]
+
+
 viewDropdownExercise : Model -> Html Msg
 viewDropdownExercise model =
     div
@@ -231,7 +277,7 @@ viewDropdownExercise model =
         [ div [ class "dropdown-trigger" ]
             [ button [ class "button" ]
                 [ span []
-                    [ text "Exercise" ]
+                    [ text model.chosenExercise.name ]
                 , span [ class "icon is-small" ]
                     [ i [ class "fas fa-angle-down" ]
                         []
@@ -239,22 +285,9 @@ viewDropdownExercise model =
                 ]
             ]
         , div [ class "dropdown-menu", id "dropdown-menu" ]
-            [ div [ class "dropdown-content" ]
-                [ a [ class "dropdown-item" ]
-                    [ text "Liegestütz" ]
-                , a [ class "dropdown-item is-active" ]
-                    [ text "Klimmzüge" ]
-                , a [ class "dropdown-item" ]
-                    [ text "Beinheben" ]
-                , a [ class "dropdown-item" ]
-                    [ text "Kniebeuge" ]
-                , hr [ class "dropdown-divider" ]
-                    []
-                , a [ class "dropdown-item" ]
-                    [ text "Brücke" ]
-                , a [ class "dropdown-item" ]
-                    [ text "Handstand-Liegestütz" ]
-                ]
+            [ div
+                [ class "dropdown-content" ]
+                (List.map (viewDropdownItemExercise model.chosenExercise) model.exercises)
             ]
         ]
 
@@ -270,7 +303,7 @@ viewDropdownLevel model =
         [ div [ class "dropdown-trigger" ]
             [ button [ class "button" ]
                 [ span []
-                    [ text "Level" ]
+                    [ text model.chosenLevel.name ]
                 , span [ class "icon is-small" ]
                     [ i [ class "fas fa-angle-down" ]
                         []
@@ -279,29 +312,7 @@ viewDropdownLevel model =
             ]
         , div [ class "dropdown-menu", id "dropdown-menu" ]
             [ div [ class "dropdown-content" ]
-                [ a [ class "dropdown-item is-active" ]
-                    [ text "1. Senkrechter Zug" ]
-                , a [ class "dropdown-item" ]
-                    [ text "2. Waagerechter Zug" ]
-                , a [ class "dropdown-item" ]
-                    [ text "3. Waagerechter Zug" ]
-                , a [ class "dropdown-item" ]
-                    [ text "4. Waagerechter Zug" ]
-                , a [ class "dropdown-item" ]
-                    [ text "5. Waagerechter Zug" ]
-                , hr [ class "dropdown-divider" ]
-                    []
-                , a [ class "dropdown-item" ]
-                    [ text "6. Waagerechter Zug" ]
-                , a [ class "dropdown-item" ]
-                    [ text "7. Waagerechter Zug" ]
-                , a [ class "dropdown-item" ]
-                    [ text "8. Waagerechter Zug" ]
-                , a [ class "dropdown-item" ]
-                    [ text "9. Waagerechter Zug" ]
-                , a [ class "dropdown-item" ]
-                    [ text "10. Waagerechter Zug" ]
-                ]
+                (List.map (viewDropdownItemLevel model.chosenLevel) model.chosenExercise.levels)
             ]
         ]
 
