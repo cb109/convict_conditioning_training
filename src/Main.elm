@@ -162,7 +162,7 @@ init =
     ( { exercises = exercises
       , dropdownActiveExercise = False
       , dropdownActiveLevel = False
-      , showDropdowns = False
+      , showDropdowns = True
       , chosenExercise = defaultExercise
       , chosenLevel = defaultLevel
       }
@@ -310,7 +310,9 @@ viewDropdownLevel model =
     div
         [ class "dropdown has-margin-right-7"
         , classList
-            [ ( "is-active", model.dropdownActiveLevel ) ]
+            [ ( "is-active", model.dropdownActiveLevel )
+            , ( "is-disabled", model.chosenExercise == defaultExercise )
+            ]
         , onClick ToggleDropdownLevel
         ]
         [ div [ class "dropdown-trigger" ]

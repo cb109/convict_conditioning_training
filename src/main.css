@@ -16,3 +16,7 @@ body {
   color: #293c4b;
 }
 
+.is-disabled {
+  pointer-events: none;
+  opacity: .65;
+}
