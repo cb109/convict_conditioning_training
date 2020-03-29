@@ -268,15 +268,19 @@ viewDropdownItemExercise chosenExercise exercise =
         [ text exercise.name ]
 
 
-viewDropdownItemLevel : Level -> Level -> Html Msg
-viewDropdownItemLevel chosenLevel level =
+viewDropdownItemLevel : Level -> Int -> Level -> Html Msg
+viewDropdownItemLevel chosenLevel index level =
+    let
+        displayIndex =
+            String.fromInt (index + 1)
+    in
     a
         [ class "dropdown-item"
         , classList
             [ ( "is-active", level.id == chosenLevel.id ) ]
         , onClick (SelectLevel level)
         ]
-        [ text level.name ]
+        [ text (displayIndex ++ ". " ++ level.name) ]
 
 
 viewDropdownExercise : Model -> Html Msg
@@ -327,7 +331,7 @@ viewDropdownLevel model =
             ]
         , div [ class "dropdown-menu", id "dropdown-menu" ]
             [ div [ class "dropdown-content" ]
-                (List.map (viewDropdownItemLevel model.chosenLevel) model.chosenExercise.levels)
+                (List.indexedMap (viewDropdownItemLevel model.chosenLevel) model.chosenExercise.levels)
             ]
         ]
 
