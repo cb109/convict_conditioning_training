@@ -119,22 +119,27 @@ exercises =
 
 
 type alias Model =
-    { exercises : List Exercise }
+    { exercises : List Exercise
+    , exerciseDropdownActive : Bool
+    }
 
 
 init : Model
 init =
-    { exercises = exercises }
+    { exercises = exercises
+    , exerciseDropdownActive = False
+    }
 
 
 type Msg
-    = Increment
-    | Decrement
+    = ToggleDropdownExercise
 
 
 update : Msg -> Model -> Model
 update msg model =
-    model
+    case msg of
+        ToggleDropdownExercise ->
+            { model | exerciseDropdownActive = not model.exerciseDropdownActive }
 
 
 viewHeader : Model -> Html Msg
@@ -165,7 +170,12 @@ viewButtonAddExercise model =
 
 viewDropdownExercise : Model -> Html Msg
 viewDropdownExercise model =
-    div [ class "dropdown is-active2 has-margin-right-7" ]
+    div
+        [ class "dropdown has-margin-right-7"
+        , classList
+            [ ( "is-active", model.exerciseDropdownActive ) ]
+        , onClick ToggleDropdownExercise
+        ]
         [ div [ class "dropdown-trigger" ]
             [ button [ class "button" ]
                 [ span []
