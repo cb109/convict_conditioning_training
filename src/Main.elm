@@ -332,23 +332,36 @@ viewDropdownLevel model =
 
 viewButtonsAddExerciseConfirmAbort : Model -> Html Msg
 viewButtonsAddExerciseConfirmAbort model =
-    div [ class "buttons" ]
+    div [ class "buttons is-centered" ]
         [ button [ class "button is-medium is-success is-inverted" ]
             [ span [ class "icon" ]
-                [ i [ class "fas fa-check" ]
-                    []
-                ]
+                [ i [ class "fas fa-check" ] [] ]
+            , span [] [ text "Add" ]
             ]
         , button
             [ class "button is-medium is-danger is-inverted"
             , onClick ToggleShowDropdowns
             ]
-            [ span [ class "icon" ]
-                [ i [ class "fas fa-times" ]
-                    []
-                ]
+            [ span [ class "icon" ] [ i [ class "fas fa-times" ] [] ]
+            , span [] [ text "Cancel" ]
             ]
         ]
+
+
+viewTransformingAddButton : Model -> Html Msg
+viewTransformingAddButton model =
+    if model.showDropdowns then
+        div [ class "columns is-gapless is-centered is-vcentered has-margin-top-7" ]
+            [ div [ class "column is-narrow has-margin-top-7" ] [ viewDropdownExercise model ]
+            , div [ class "column is-narrow has-margin-top-7" ] [ viewDropdownLevel model ]
+            , div [ class "column is-narrow has-margin-top-7" ] [ viewButtonsAddExerciseConfirmAbort model ]
+            ]
+
+    else
+        div [ class "level" ]
+            [ div [ class "level-item" ]
+                [ viewButtonAddExercise model ]
+            ]
 
 
 viewDateSubheader : Model -> Html Msg
@@ -441,24 +454,6 @@ viewTrainedExercise2 model =
                 ]
             ]
         ]
-
-
-viewTransformingAddButton : Model -> Html Msg
-viewTransformingAddButton model =
-    if model.showDropdowns then
-        div [ class "level" ]
-            [ div [ class "level-item has-margin-top-6" ]
-                [ viewDropdownExercise model
-                , viewDropdownLevel model
-                , viewButtonsAddExerciseConfirmAbort model
-                ]
-            ]
-
-    else
-        div [ class "level" ]
-            [ div [ class "level-item" ]
-                [ viewButtonAddExercise model ]
-            ]
 
 
 viewBody : Model -> Html Msg
