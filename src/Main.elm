@@ -120,14 +120,16 @@ exercises =
 
 type alias Model =
     { exercises : List Exercise
-    , exerciseDropdownActive : Bool
+    , dropdownActiveExercise : Bool
+    , dropdownActiveLevel : Bool
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { exercises = exercises
-      , exerciseDropdownActive = False
+      , dropdownActiveExercise = False
+      , dropdownActiveLevel = False
       }
     , Cmd.none
     )
@@ -139,13 +141,27 @@ init =
 
 type Msg
     = ToggleDropdownExercise
+    | ToggleDropdownLevel
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ToggleDropdownExercise ->
-            ( { model | exerciseDropdownActive = not model.exerciseDropdownActive }, Cmd.none )
+            ( { model
+                | dropdownActiveExercise = not model.dropdownActiveExercise
+                , dropdownActiveLevel = False
+              }
+            , Cmd.none
+            )
+
+        ToggleDropdownLevel ->
+            ( { model
+                | dropdownActiveExercise = False
+                , dropdownActiveLevel = not model.dropdownActiveLevel
+              }
+            , Cmd.none
+            )
 
 
 
@@ -183,7 +199,7 @@ viewDropdownExercise model =
     div
         [ class "dropdown has-margin-right-7"
         , classList
-            [ ( "is-active", model.exerciseDropdownActive ) ]
+            [ ( "is-active", model.dropdownActiveExercise ) ]
         , onClick ToggleDropdownExercise
         ]
         [ div [ class "dropdown-trigger" ]
@@ -219,7 +235,12 @@ viewDropdownExercise model =
 
 viewDropdownLevel : Model -> Html Msg
 viewDropdownLevel model =
-    div [ class "dropdown is-active2 has-margin-right-7" ]
+    div
+        [ class "dropdown has-margin-right-7"
+        , classList
+            [ ( "is-active", model.dropdownActiveLevel ) ]
+        , onClick ToggleDropdownLevel
+        ]
         [ div [ class "dropdown-trigger" ]
             [ button [ class "button" ]
                 [ span []
