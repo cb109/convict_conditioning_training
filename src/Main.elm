@@ -1,6 +1,10 @@
 module Main exposing (..)
 
+-- import Dict exposing (Dict)
+
 import Browser
+import Dict exposing (Dict)
+import Dict.Extra as DictExtra
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
@@ -23,11 +27,34 @@ type alias Exercise =
     }
 
 
+type alias Training =
+    { exerciseId : Int
+    , levelId : Int
+    , repetitions : List Int
+    }
+
+
+type alias Model =
+    { exercises : List Exercise
+    , dropdownActiveExercise : Bool
+    , dropdownActiveLevel : Bool
+    , showDropdowns : Bool
+    , chosenExercise : Exercise
+    , chosenLevel : Level
+    , trainings : List Training
+    }
+
+
 getListItemAt : List a -> Int -> Maybe a
 getListItemAt things index =
     things
         |> List.drop (index - 1)
         |> List.head
+
+
+
+-- getExerciseById : Int -> Maybe Exercise =
+-- getExerciseById trainingId =
 
 
 defaultLevel : Level
@@ -143,14 +170,26 @@ exercises =
     ]
 
 
-type alias Model =
-    { exercises : List Exercise
-    , dropdownActiveExercise : Bool
-    , dropdownActiveLevel : Bool
-    , showDropdowns : Bool
-    , chosenExercise : Exercise
-    , chosenLevel : Level
-    }
+idToExercise : Dict Int Exercise
+idToExercise =
+    DictExtra.fromListBy .id exercises
+
+
+getTrainingLabel : Training -> String
+getTrainingLabel training =
+    (Maybe.withDefault (Exercise 0 "" []) (Dict.get training.exerciseId idToExercise)).name
+
+
+getTrainingSublabel : Training -> String
+getTrainingSublabel training =
+    let
+        exercise =
+            Maybe.withDefault (Exercise 0 "" []) (Dict.get training.exerciseId idToExercise)
+
+        levelIndex =
+            training.levelId - (training.exerciseId * 10)
+    in
+    (Maybe.withDefault (Level 0 "") (getListItemAt exercise.levels levelIndex)).name
 
 
 init : ( Model, Cmd Msg )
@@ -161,6 +200,12 @@ init =
       , showDropdowns = False
       , chosenExercise = defaultExercise
       , chosenLevel = defaultLevel
+      , trainings =
+            [ { exerciseId = 2
+              , levelId = 2
+              , repetitions = [ 20, 15, 30, 40, 30 ]
+              }
+            ]
       }
     , Cmd.none
     )
@@ -377,8 +422,8 @@ viewDateSubheader model =
         ]
 
 
-viewTrainedExercise1 : Model -> Html Msg
-viewTrainedExercise1 model =
+viewTraining : Training -> Html Msg
+viewTraining training =
     div [ class "columns" ]
         [ div [ class "column is-two-fifths" ]
             [ div [ class "columns is-mobile" ]
@@ -388,77 +433,86 @@ viewTrainedExercise1 model =
                     ]
                 , div [ class "column" ]
                     [ p [ class "title is-4" ]
-                        [ text "Push-Ups" ]
+                        [ text (getTrainingLabel training) ]
                     , p [ class "subtitle is-6" ]
-                        [ text "On knees" ]
+                        [ text (getTrainingSublabel training) ]
                     ]
                 ]
             ]
         , div [ class "column" ]
             [ div [ class "tags" ]
-                [ span [ class "tag is-large" ]
-                    [ text "20" ]
-                , span [ class "tag is-large" ]
-                    [ text "15" ]
-                , span [ class "tag is-large" ]
-                    [ text "30" ]
-                , span [ class "tag is-large" ]
-                    [ text "40" ]
-                , span [ class "tag is-large" ]
-                    [ text "30" ]
-                , button [ class "button is-success is-inverted has-margin-bottom-7" ]
-                    [ span [ class "icon" ]
-                        [ i [ class "fas fa-plus" ]
-                            []
-                        ]
-                    , span []
-                        [ text "Add Set" ]
-                    ]
-                ]
+                (viewTrainingTags training)
             ]
         ]
 
 
-viewTrainedExercise2 : Model -> Html Msg
-viewTrainedExercise2 model =
-    div [ class "columns" ]
-        [ div [ class "column is-two-fifths" ]
-            [ div [ class "columns is-mobile" ]
-                [ div [ class "column is-narrow" ]
-                    [ p [ class "title is-1 has-text-grey-lighter" ]
-                        [ text "1" ]
-                    ]
-                , div [ class "column" ]
-                    [ p [ class "title is-4" ]
-                        [ text "Pull-Ups" ]
-                    , p [ class "subtitle is-6" ]
-                        [ text "Vertical pull" ]
-                    ]
-                ]
+viewTrainingTags : Training -> List (Html Msg)
+viewTrainingTags training =
+    let
+        reps =
+            List.map viewTrainingRepetition training.repetitions
+    in
+    List.reverse (viewTrainingAddRepetitionButton :: reps)
+
+
+viewTrainingRepetition : Int -> Html Msg
+viewTrainingRepetition repetition =
+    span [ class "tag is-large" ] [ text (String.fromInt repetition) ]
+
+
+viewTrainingAddRepetitionButton : Html Msg
+viewTrainingAddRepetitionButton =
+    button [ class "button is-success is-inverted has-margin-bottom-7" ]
+        [ span [ class "icon" ]
+            [ i [ class "fas fa-plus" ]
+                []
             ]
-        , div [ class "column" ]
-            [ div [ class "tags" ]
-                [ span [ class "tag is-large" ]
-                    [ text "20" ]
-                , span [ class "tag is-large is-paddingless" ]
-                    [ button [ class "button is-danger" ]
-                        [ span [ class "icon" ]
-                            [ i [ class "fas fa-times" ]
-                                []
-                            ]
-                        ]
-                    ]
-                , button [ class "button is-success is-inverted has-margin-bottom-7" ]
-                    [ span [ class "icon" ]
-                        [ i [ class "fas fa-plus" ]
-                            []
-                        ]
-                    , span []
-                        [ text "Add Set" ]
-                    ]
-                ]
-            ]
+        , span []
+            [ text "Add Set" ]
         ]
+
+
+
+-- viewTrainedExercise2 : Model -> Html Msg
+-- viewTrainedExercise2 model =
+--     div [ class "columns" ]
+--         [ div [ class "column is-two-fifths" ]
+--             [ div [ class "columns is-mobile" ]
+--                 [ div [ class "column is-narrow" ]
+--                     [ p [ class "title is-1 has-text-grey-lighter" ]
+--                         [ text "1" ]
+--                     ]
+--                 , div [ class "column" ]
+--                     [ p [ class "title is-4" ]
+--                         [ text "Pull-Ups" ]
+--                     , p [ class "subtitle is-6" ]
+--                         [ text "Vertical pull" ]
+--                     ]
+--                 ]
+--             ]
+--         , div [ class "column" ]
+--             [ div [ class "tags" ]
+--                 [ span [ class "tag is-large" ]
+--                     [ text "20" ]
+--                 , span [ class "tag is-large is-paddingless" ]
+--                     [ button [ class "button is-danger" ]
+--                         [ span [ class "icon" ]
+--                             [ i [ class "fas fa-times" ]
+--                                 []
+--                             ]
+--                         ]
+--                     ]
+--                 , button [ class "button is-success is-inverted has-margin-bottom-7" ]
+--                     [ span [ class "icon" ]
+--                         [ i [ class "fas fa-plus" ]
+--                             []
+--                         ]
+--                     , span []
+--                         [ text "Add Set" ]
+--                     ]
+--                 ]
+--             ]
+--         ]
 
 
 viewBody : Model -> Html Msg
@@ -471,11 +525,11 @@ viewBody model =
             , div [ class "box has-margin-left-6" ]
                 [ ul []
                     [ li []
-                        [ viewTrainedExercise1 model ]
-                    , hr []
-                        []
-                    , li []
-                        [ viewTrainedExercise2 model ]
+                        (List.map viewTraining model.trainings)
+
+                    -- , hr [] []
+                    -- , li []
+                    --     [ viewTrainedExercise2 model ]
                     ]
                 ]
             ]
