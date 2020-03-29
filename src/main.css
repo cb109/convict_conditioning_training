@@ -20,3 +20,12 @@ body {
   pointer-events: none;
   opacity: .65;
 }
+
+.clickable {
+  cursor: pointer;
+}
+
+.deleteable:hover {
+  background-color: hsl(348, 100%, 61%);
+  color: white;
+}

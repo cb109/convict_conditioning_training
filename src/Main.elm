@@ -6,6 +6,7 @@ import Dict.Extra as DictExtra
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import List.Extra as ListExtra
 
 
 
@@ -42,13 +43,6 @@ type alias Model =
     , chosenLevel : Level
     , trainings : List Training
     }
-
-
-getListItemAt : List a -> Int -> Maybe a
-getListItemAt things index =
-    things
-        |> List.drop (index - 1)
-        |> List.head
 
 
 defaultLevel : Level
@@ -168,7 +162,7 @@ trainings : List Training
 trainings =
     [ { id = 100
       , exerciseId = 2
-      , levelId = 22
+      , levelId = 21
       , repetitions = [ 20, 15, 30, 40, 30 ]
       }
     ]
@@ -189,10 +183,15 @@ getTrainingLabel training =
     (Maybe.withDefault (Exercise 0 "" []) (Dict.get training.exerciseId idToExercise)).name
 
 
-getTrainingLevelIndex : Training -> Int
-getTrainingLevelIndex training =
+getTrainingLevel : Training -> Int
+getTrainingLevel training =
     -- Level ids relate to the exercise ids by a factor of 10
     training.levelId - (training.exerciseId * 10) + 1
+
+
+getTrainingLevelIndex : Training -> Int
+getTrainingLevelIndex training =
+    getTrainingLevel training - 1
 
 
 getTrainingSublabel : Training -> String
@@ -204,7 +203,7 @@ getTrainingSublabel training =
         levelIndex =
             getTrainingLevelIndex training
     in
-    (Maybe.withDefault (Level 0 "") (getListItemAt exercise.levels levelIndex)).name
+    (Maybe.withDefault (Level 0 "") (ListExtra.getAt levelIndex exercise.levels)).name
 
 
 getTrainingById : Int -> Training
@@ -238,6 +237,7 @@ type Msg
     | SelectLevel Level
     | AddTraining Exercise Level
     | AddRepetition Training Int
+    | DeleteRepetition Training Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -295,6 +295,9 @@ update msg model =
         AddRepetition training repetition ->
             ( addRepetitionToTraining model training repetition, Cmd.none )
 
+        DeleteRepetition training repetitionIndex ->
+            ( deleteRepetitionFromTraining model training repetitionIndex, Cmd.none )
+
 
 generateNewTrainingId : List Training -> Int
 generateNewTrainingId trainings_ =
@@ -306,6 +309,25 @@ addRepetitionToTraining model training repetition =
     let
         updatedRepetitions =
             repetition :: training.repetitions
+
+        updateReps currentTraining =
+            if currentTraining.id == training.id then
+                { currentTraining | repetitions = updatedRepetitions }
+
+            else
+                currentTraining
+
+        updatedTrainings =
+            List.map updateReps model.trainings
+    in
+    { model | trainings = updatedTrainings }
+
+
+deleteRepetitionFromTraining : Model -> Training -> Int -> Model
+deleteRepetitionFromTraining model training repetitionIndex =
+    let
+        updatedRepetitions =
+            ListExtra.removeAt repetitionIndex training.repetitions
 
         updateReps currentTraining =
             if currentTraining.id == training.id then
@@ -338,8 +360,8 @@ viewHeader _ =
         ]
 
 
-viewButtonAddExercise : Model -> Html Msg
-viewButtonAddExercise model =
+viewButtonAddExercise : Html Msg
+viewButtonAddExercise =
     button
         [ class "button is-medium is-success is-inverted has-margin-top-6"
         , onClick ToggleShowDropdowns
@@ -466,7 +488,7 @@ viewTransformingAddButton model =
     else
         div [ class "level" ]
             [ div [ class "level-item" ]
-                [ viewButtonAddExercise model ]
+                [ viewButtonAddExercise ]
             ]
 
 
@@ -485,7 +507,7 @@ viewTraining amountTrainings index training =
             getTrainingLabel training
 
         level =
-            String.fromInt (getTrainingLevelIndex training)
+            String.fromInt (getTrainingLevel training)
 
         sublabel =
             getTrainingSublabel training
@@ -528,15 +550,27 @@ viewTraining amountTrainings index training =
 viewTrainingTags : Training -> List (Html Msg)
 viewTrainingTags training =
     let
+        mapTraining =
+            viewTrainingRepetition training
+
         reps =
-            List.map viewTrainingRepetition training.repetitions
+            List.indexedMap mapTraining training.repetitions
     in
     List.reverse (viewTrainingAddRepetitionButton training :: reps)
 
 
-viewTrainingRepetition : Int -> Html Msg
-viewTrainingRepetition repetition =
-    span [ class "tag is-large" ] [ text (String.fromInt repetition) ]
+viewTrainingRepetition : Training -> Int -> Int -> Html Msg
+viewTrainingRepetition training index repetition =
+    span
+        [ class "tag is-large clickable deleteable"
+        , onClick (deleteRepetition training index)
+        ]
+        [ text (String.fromInt repetition) ]
+
+
+deleteRepetition : Training -> Int -> Msg
+deleteRepetition training index =
+    DeleteRepetition training index
 
 
 addRepetition : Training -> Msg
