@@ -339,7 +339,10 @@ viewDropdownLevel model =
 viewButtonsAddExerciseConfirmAbort : Model -> Html Msg
 viewButtonsAddExerciseConfirmAbort model =
     div [ class "buttons is-centered" ]
-        [ button [ class "button is-medium is-success is-inverted" ]
+        [ button
+            [ class "button is-medium is-success is-inverted"
+            , disabled (model.chosenLevel == defaultLevel)
+            ]
             [ span [ class "icon" ]
                 [ i [ class "fas fa-check" ] [] ]
             , span [] [ text "Add" ]
