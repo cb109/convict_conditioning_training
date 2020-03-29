@@ -1,6 +1,4 @@
-module Main exposing (..)
-
--- import Dict exposing (Dict)
+port module Main exposing (..)
 
 import Browser
 import Dict exposing (Dict)
@@ -8,6 +6,12 @@ import Dict.Extra as DictExtra
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+
+
+port openPrompt : () -> Cmd msg
+
+
+port promptAnswer : (String -> msg) -> Sub msg
 
 
 
@@ -28,7 +32,8 @@ type alias Exercise =
 
 
 type alias Training =
-    { exerciseId : Int
+    { id : Int
+    , exerciseId : Int
     , levelId : Int
     , repetitions : List Int
     }
@@ -50,11 +55,6 @@ getListItemAt things index =
     things
         |> List.drop (index - 1)
         |> List.head
-
-
-
--- getExerciseById : Int -> Maybe Exercise =
--- getExerciseById trainingId =
 
 
 defaultLevel : Level
@@ -170,9 +170,24 @@ exercises =
     ]
 
 
+trainings : List Training
+trainings =
+    [ { id = 100
+      , exerciseId = 2
+      , levelId = 2
+      , repetitions = [ 20, 15, 30, 40, 30 ]
+      }
+    ]
+
+
 idToExercise : Dict Int Exercise
 idToExercise =
     DictExtra.fromListBy .id exercises
+
+
+idToTraining : Dict Int Training
+idToTraining =
+    DictExtra.fromListBy .id trainings
 
 
 getTrainingLabel : Training -> String
@@ -192,6 +207,11 @@ getTrainingSublabel training =
     (Maybe.withDefault (Level 0 "") (getListItemAt exercise.levels levelIndex)).name
 
 
+getTrainingById : Int -> Training
+getTrainingById trainingId =
+    Maybe.withDefault (Training 0 0 0 []) (Dict.get trainingId idToTraining)
+
+
 init : ( Model, Cmd Msg )
 init =
     ( { exercises = exercises
@@ -200,12 +220,7 @@ init =
       , showDropdowns = False
       , chosenExercise = defaultExercise
       , chosenLevel = defaultLevel
-      , trainings =
-            [ { exerciseId = 2
-              , levelId = 2
-              , repetitions = [ 20, 15, 30, 40, 30 ]
-              }
-            ]
+      , trainings = trainings
       }
     , Cmd.none
     )
@@ -216,16 +231,25 @@ init =
 
 
 type Msg
-    = ToggleShowDropdowns
+    = OpenPrompt
+    | PromptAnswered String
+    | ToggleShowDropdowns
     | ToggleDropdownExercise
     | ToggleDropdownLevel
     | SelectExercise Exercise
     | SelectLevel Level
+    | AddRepetition Training Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        OpenPrompt ->
+            ( model, openPrompt () )
+
+        PromptAnswered answer ->
+            ( model, Cmd.none )
+
         ToggleShowDropdowns ->
             ( { model
                 | showDropdowns = not model.showDropdowns
@@ -263,6 +287,28 @@ update msg model =
               }
             , Cmd.none
             )
+
+        AddRepetition training repetition ->
+            ( addRepetitionToTraining model training repetition, Cmd.none )
+
+
+addRepetitionToTraining : Model -> Training -> Int -> Model
+addRepetitionToTraining model training repetition =
+    let
+        updatedRepetitions =
+            repetition :: training.repetitions
+
+        updateReps currentTraining =
+            if currentTraining.id == training.id then
+                { currentTraining | repetitions = updatedRepetitions }
+
+            else
+                currentTraining
+
+        updatedTrainings =
+            List.map updateReps model.trainings
+    in
+    { model | trainings = updatedTrainings }
 
 
 
@@ -452,7 +498,7 @@ viewTrainingTags training =
         reps =
             List.map viewTrainingRepetition training.repetitions
     in
-    List.reverse (viewTrainingAddRepetitionButton :: reps)
+    List.reverse (viewTrainingAddRepetitionButton training :: reps)
 
 
 viewTrainingRepetition : Int -> Html Msg
@@ -460,9 +506,18 @@ viewTrainingRepetition repetition =
     span [ class "tag is-large" ] [ text (String.fromInt repetition) ]
 
 
-viewTrainingAddRepetitionButton : Html Msg
-viewTrainingAddRepetitionButton =
-    button [ class "button is-success is-inverted has-margin-bottom-7" ]
+addRepetition : Training -> Msg
+addRepetition training =
+    -- TODO: Add UI to ask a number from the user
+    AddRepetition training 1
+
+
+viewTrainingAddRepetitionButton : Training -> Html Msg
+viewTrainingAddRepetitionButton training =
+    button
+        [ class "button is-success is-inverted has-margin-bottom-7"
+        , onClick (addRepetition training)
+        ]
         [ span [ class "icon" ]
             [ i [ class "fas fa-plus" ]
                 []
@@ -473,7 +528,6 @@ viewTrainingAddRepetitionButton =
 
 
 
--- viewTrainedExercise2 : Model -> Html Msg
 -- viewTrainedExercise2 model =
 --     div [ class "columns" ]
 --         [ div [ class "column is-two-fifths" ]
@@ -548,11 +602,18 @@ view model =
 ---- PROGRAM ----
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    promptAnswer PromptAnswered
+
+
 main : Program () Model Msg
 main =
     Browser.element
         { view = view
         , init = \_ -> init
         , update = update
-        , subscriptions = always Sub.none
+
+        -- , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
