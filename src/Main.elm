@@ -10,10 +10,6 @@ import Html.Events exposing (onClick)
 ---- MODEL ----
 
 
-type alias Item a =
-    { a | id : Int, name : String }
-
-
 type alias Level =
     { id : Int
     , name : String
@@ -162,7 +158,7 @@ init =
     ( { exercises = exercises
       , dropdownActiveExercise = False
       , dropdownActiveLevel = False
-      , showDropdowns = True
+      , showDropdowns = False
       , chosenExercise = defaultExercise
       , chosenLevel = defaultLevel
       }
