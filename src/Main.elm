@@ -479,7 +479,7 @@ viewButtonsAddExerciseConfirmAbort model =
 viewTransformingAddButton : Model -> Html Msg
 viewTransformingAddButton model =
     if model.showDropdowns then
-        div [ class "columns is-gapless is-centered is-vcentered has-margin-top-7" ]
+        div [ class "columns is-gapless has-text-centered is-centered is-vcentered has-margin-top-7" ]
             [ div [ class "column is-narrow has-margin-top-7" ] [ viewDropdownExercise model ]
             , div [ class "column is-narrow has-margin-top-7" ] [ viewDropdownLevel model ]
             , div [ class "column is-narrow has-margin-top-7" ] [ viewButtonsAddExerciseConfirmAbort model ]
