@@ -1,4 +1,4 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Browser
 import Dict exposing (Dict)
@@ -6,12 +6,6 @@ import Dict.Extra as DictExtra
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-
-
-port openPrompt : () -> Cmd msg
-
-
-port promptAnswer : (String -> msg) -> Sub msg
 
 
 
@@ -231,9 +225,7 @@ init =
 
 
 type Msg
-    = OpenPrompt
-    | PromptAnswered String
-    | ToggleShowDropdowns
+    = ToggleShowDropdowns
     | ToggleDropdownExercise
     | ToggleDropdownLevel
     | SelectExercise Exercise
@@ -244,12 +236,6 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        OpenPrompt ->
-            ( model, openPrompt () )
-
-        PromptAnswered answer ->
-            ( model, Cmd.none )
-
         ToggleShowDropdowns ->
             ( { model
                 | showDropdowns = not model.showDropdowns
@@ -602,18 +588,11 @@ view model =
 ---- PROGRAM ----
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    promptAnswer PromptAnswered
-
-
 main : Program () Model Msg
 main =
     Browser.element
         { view = view
         , init = \_ -> init
         , update = update
-
-        -- , subscriptions = always Sub.none
-        , subscriptions = subscriptions
+        , subscriptions = always Sub.none
         }
