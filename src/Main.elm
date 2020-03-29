@@ -103,25 +103,49 @@ exercises =
     , { id = 6
       , name = "Brücke"
       , levels =
-            [ { id = 50, name = "Kurze Brücke" }
-            , { id = 51, name = "Gerade Brücke" }
-            , { id = 52, name = "Angewinkelte Brücke" }
-            , { id = 53, name = "Kopf-Brücke" }
-            , { id = 54, name = "Halbe Brücke" }
-            , { id = 55, name = "Vollständige Brücke" }
-            , { id = 56, name = "Brücke an der Wand abwärts" }
-            , { id = 57, name = "Brücke an der Wand aufwärts" }
-            , { id = 58, name = "Brücke aus dem Stand" }
-            , { id = 59, name = "Stand-zu-Stand Brücke" }
+            [ { id = 60, name = "Kurze Brücke" }
+            , { id = 61, name = "Gerade Brücke" }
+            , { id = 62, name = "Angewinkelte Brücke" }
+            , { id = 63, name = "Kopf-Brücke" }
+            , { id = 64, name = "Halbe Brücke" }
+            , { id = 65, name = "Vollständige Brücke" }
+            , { id = 66, name = "Brücke an der Wand abwärts" }
+            , { id = 67, name = "Brücke an der Wand aufwärts" }
+            , { id = 68, name = "Brücke aus dem Stand" }
+            , { id = 69, name = "Stand-zu-Stand Brücke" }
             ]
       }
     ]
+
+
+getListItemAt : List a -> Int -> Maybe a
+getListItemAt things index =
+    things
+        |> List.drop (index - 1)
+        |> List.head
+
+
+defaultExercise : Maybe Exercise
+defaultExercise =
+    getListItemAt exercises 1
+
+
+defaultLevel : Maybe Level
+defaultLevel =
+    case defaultExercise of
+        Just exercise ->
+            getListItemAt exercise.levels 1
+
+        Nothing ->
+            Nothing
 
 
 type alias Model =
     { exercises : List Exercise
     , dropdownActiveExercise : Bool
     , dropdownActiveLevel : Bool
+    , chosenExercise : Maybe Exercise
+    , chosenLevel : Maybe Level
     }
 
 
@@ -130,6 +154,8 @@ init =
     ( { exercises = exercises
       , dropdownActiveExercise = False
       , dropdownActiveLevel = False
+      , chosenExercise = defaultExercise
+      , chosenLevel = defaultLevel
       }
     , Cmd.none
     )
