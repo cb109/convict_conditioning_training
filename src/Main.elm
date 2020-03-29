@@ -168,7 +168,7 @@ trainings : List Training
 trainings =
     [ { id = 100
       , exerciseId = 2
-      , levelId = 2
+      , levelId = 22
       , repetitions = [ 20, 15, 30, 40, 30 ]
       }
     ]
@@ -189,6 +189,12 @@ getTrainingLabel training =
     (Maybe.withDefault (Exercise 0 "" []) (Dict.get training.exerciseId idToExercise)).name
 
 
+getTrainingLevelIndex : Training -> Int
+getTrainingLevelIndex training =
+    -- Level ids relate to the exercise ids by a factor of 10
+    training.levelId - (training.exerciseId * 10) + 1
+
+
 getTrainingSublabel : Training -> String
 getTrainingSublabel training =
     let
@@ -196,7 +202,7 @@ getTrainingSublabel training =
             Maybe.withDefault (Exercise 0 "" []) (Dict.get training.exerciseId idToExercise)
 
         levelIndex =
-            training.levelId - (training.exerciseId * 10)
+            getTrainingLevelIndex training
     in
     (Maybe.withDefault (Level 0 "") (getListItemAt exercise.levels levelIndex)).name
 
@@ -230,6 +236,7 @@ type Msg
     | ToggleDropdownLevel
     | SelectExercise Exercise
     | SelectLevel Level
+    | AddTraining Exercise Level
     | AddRepetition Training Int
 
 
@@ -270,6 +277,17 @@ update msg model =
         SelectLevel level ->
             ( { model
                 | chosenLevel = level
+              }
+            , Cmd.none
+            )
+
+        AddTraining exercise level ->
+            let
+                training =
+                    Training 101 exercise.id level.id []
+            in
+            ( { model
+                | trainings = training :: trainings
               }
             , Cmd.none
             )
@@ -415,6 +433,7 @@ viewButtonsAddExerciseConfirmAbort model =
         [ button
             [ class "button is-medium is-success is-inverted"
             , disabled (model.chosenLevel == defaultLevel)
+            , onClick (AddTraining model.chosenExercise model.chosenLevel)
             ]
             [ span [ class "icon" ]
                 [ i [ class "fas fa-check" ] [] ]
@@ -456,18 +475,28 @@ viewDateSubheader model =
 
 viewTraining : Training -> Html Msg
 viewTraining training =
+    let
+        label =
+            getTrainingLabel training
+
+        level =
+            String.fromInt (getTrainingLevelIndex training)
+
+        sublabel =
+            getTrainingSublabel training
+    in
     div [ class "columns" ]
         [ div [ class "column is-two-fifths" ]
             [ div [ class "columns is-mobile" ]
                 [ div [ class "column is-narrow" ]
                     [ p [ class "title is-1 has-text-grey-lighter" ]
-                        [ text "2" ]
+                        [ text level ]
                     ]
                 , div [ class "column" ]
                     [ p [ class "title is-4" ]
-                        [ text (getTrainingLabel training) ]
+                        [ text label ]
                     , p [ class "subtitle is-6" ]
-                        [ text (getTrainingSublabel training) ]
+                        [ text sublabel ]
                     ]
                 ]
             ]
@@ -495,7 +524,7 @@ viewTrainingRepetition repetition =
 addRepetition : Training -> Msg
 addRepetition training =
     -- TODO: Add UI to ask a number from the user
-    AddRepetition training 1
+    AddRepetition training 0
 
 
 viewTrainingAddRepetitionButton : Training -> Html Msg
