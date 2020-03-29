@@ -151,6 +151,7 @@ type alias Model =
     { exercises : List Exercise
     , dropdownActiveExercise : Bool
     , dropdownActiveLevel : Bool
+    , showDropdowns : Bool
     , chosenExercise : Exercise
     , chosenLevel : Level
     }
@@ -161,6 +162,7 @@ init =
     ( { exercises = exercises
       , dropdownActiveExercise = False
       , dropdownActiveLevel = False
+      , showDropdowns = False
       , chosenExercise = defaultExercise
       , chosenLevel = defaultLevel
       }
@@ -173,7 +175,8 @@ init =
 
 
 type Msg
-    = ToggleDropdownExercise
+    = ToggleShowDropdowns
+    | ToggleDropdownExercise
     | ToggleDropdownLevel
     | SelectExercise Exercise
     | SelectLevel Level
@@ -182,6 +185,13 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleShowDropdowns ->
+            ( { model
+                | showDropdowns = not model.showDropdowns
+              }
+            , Cmd.none
+            )
+
         ToggleDropdownExercise ->
             ( { model
                 | dropdownActiveExercise = not model.dropdownActiveExercise
@@ -234,7 +244,10 @@ viewHeader _ =
 
 viewButtonAddExercise : Model -> Html Msg
 viewButtonAddExercise model =
-    button [ class "button is-medium is-success is-inverted has-margin-top-6" ]
+    button
+        [ class "button is-medium is-success is-inverted has-margin-top-6"
+        , onClick ToggleShowDropdowns
+        ]
         [ span [ class "icon" ]
             [ i [ class "fas fa-plus" ]
                 []
@@ -326,7 +339,10 @@ viewButtonsAddExerciseConfirmAbort model =
                     []
                 ]
             ]
-        , button [ class "button is-medium is-danger is-inverted" ]
+        , button
+            [ class "button is-medium is-danger is-inverted"
+            , onClick ToggleShowDropdowns
+            ]
             [ span [ class "icon" ]
                 [ i [ class "fas fa-times" ]
                     []
@@ -427,21 +443,29 @@ viewTrainedExercise2 model =
         ]
 
 
+viewTransformingAddButton : Model -> Html Msg
+viewTransformingAddButton model =
+    if model.showDropdowns then
+        div [ class "level" ]
+            [ div [ class "level-item has-margin-top-6" ]
+                [ viewDropdownExercise model
+                , viewDropdownLevel model
+                , viewButtonsAddExerciseConfirmAbort model
+                ]
+            ]
+
+    else
+        div [ class "level" ]
+            [ div [ class "level-item" ]
+                [ viewButtonAddExercise model ]
+            ]
+
+
 viewBody : Model -> Html Msg
 viewBody model =
     section []
         [ div [ class "container" ]
-            [ div [ class "level" ]
-                [ div [ class "level-item" ]
-                    [ viewButtonAddExercise model ]
-                ]
-            , div [ class "level" ]
-                [ div [ class "level-item" ]
-                    [ viewDropdownExercise model
-                    , viewDropdownLevel model
-                    , viewButtonsAddExerciseConfirmAbort model
-                    ]
-                ]
+            [ viewTransformingAddButton model
             , hr [] []
             , viewDateSubheader model
             , div [ class "box has-margin-left-6" ]
