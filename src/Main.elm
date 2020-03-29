@@ -10,13 +10,121 @@ main =
     Browser.sandbox { init = init, update = update, view = view }
 
 
+type alias Level =
+    { id : Int
+    , name : String
+    }
+
+
+type alias Exercise =
+    { id : Int
+    , name : String
+    , levels : List Level
+    }
+
+
+exercises : List Exercise
+exercises =
+    [ { id = 1
+      , name = "Kniebeuge"
+      , levels =
+            [ { id = 10, name = "Schulterstand Kniebeuge" }
+            , { id = 11, name = "Klappmesser Kniebeuge" }
+            , { id = 12, name = "Gestützte Kniebeuge" }
+            , { id = 13, name = "Halbe Kniebeuge" }
+            , { id = 14, name = "Vollständige Kniebeuge" }
+            , { id = 15, name = "Kniebeuge im engen Stand" }
+            , { id = 16, name = "Ungleiche Kniebeuge" }
+            , { id = 17, name = "Halbe einbeinige Kniebeuge" }
+            , { id = 18, name = "Unterstützte einbeinige Kniebeuge" }
+            , { id = 19, name = "Einbeinige Kniebeuge" }
+            ]
+      }
+    , { id = 2
+      , name = "Klimmzug"
+      , levels =
+            [ { id = 20, name = "Senkrechter Zug" }
+            , { id = 21, name = "Waagerechter Zug" }
+            , { id = 22, name = "Klappmesser Klimmzug" }
+            , { id = 23, name = "Halber Klimmzug" }
+            , { id = 24, name = "Vollständiger Klimmzug" }
+            , { id = 25, name = "Enger Klimmzug" }
+            , { id = 26, name = "Ungleicher Klimmzug" }
+            , { id = 27, name = "Halber einarmiger Klimmzug" }
+            , { id = 28, name = "Unterstützter einarmiger Klimmzug" }
+            , { id = 29, name = "Einarmiger Klimmzug" }
+            ]
+      }
+    , { id = 3
+      , name = "Liegestütz"
+      , levels =
+            [ { id = 30, name = "Liegestütz an der Wand" }
+            , { id = 31, name = "Schräger Liegestütz" }
+            , { id = 32, name = "Liegestütz auf den Knien" }
+            , { id = 33, name = "Halber Liegestütz" }
+            , { id = 34, name = "Vollständiger Liegestütz" }
+            , { id = 35, name = "Enger Liegestütz" }
+            , { id = 36, name = "Ungleicher Liegestütz" }
+            , { id = 37, name = "Halber einarmiger Liegestütz" }
+            , { id = 38, name = "Einarmiger Hebel-Liegestütz" }
+            , { id = 39, name = "Einarmiger Liegestütz" }
+            ]
+      }
+    , { id = 4
+      , name = "Beinheben"
+      , levels =
+            [ { id = 40, name = "Knieanziehen" }
+            , { id = 41, name = "Knieheben im Liegen" }
+            , { id = 42, name = "Gebeugtes Beinheben im Liegen" }
+            , { id = 43, name = "Froschbeinheben im Liegen" }
+            , { id = 44, name = "Gerades Beinheben im Liegen" }
+            , { id = 45, name = "Hängendes Knieheben" }
+            , { id = 46, name = "Hängendes gebeugtes Knieheben" }
+            , { id = 47, name = "Hängendes Froschbeinheben" }
+            , { id = 48, name = "Hängendes halbes Beinheben" }
+            , { id = 49, name = "Hängendes gerades Beinheben" }
+            ]
+      }
+    , { id = 5
+      , name = "Handstand-Liegestütz"
+      , levels =
+            [ { id = 50, name = "Kopfstand an der Wand" }
+            , { id = 51, name = "Die Krähe" }
+            , { id = 52, name = "Handstand an der Wand" }
+            , { id = 53, name = "Halber Handstand-Liegestütz" }
+            , { id = 54, name = "Handstand-Liegestütz" }
+            , { id = 55, name = "Enger Handstand-Liegestütz" }
+            , { id = 56, name = "Ungleicher Handstand-Liegestütz" }
+            , { id = 57, name = "Halber einarmiger Handstand-Liegestütz" }
+            , { id = 58, name = "Hebel-Handstand-Liegestütz" }
+            , { id = 59, name = "Einarmiger Handstand-Liegestütz" }
+            ]
+      }
+    , { id = 6
+      , name = "Brücke"
+      , levels =
+            [ { id = 50, name = "Kurze Brücke" }
+            , { id = 51, name = "Gerade Brücke" }
+            , { id = 52, name = "Angewinkelte Brücke" }
+            , { id = 53, name = "Kopf-Brücke" }
+            , { id = 54, name = "Halbe Brücke" }
+            , { id = 55, name = "Vollständige Brücke" }
+            , { id = 56, name = "Brücke an der Wand abwärts" }
+            , { id = 57, name = "Brücke an der Wand aufwärts" }
+            , { id = 58, name = "Brücke aus dem Stand" }
+            , { id = 59, name = "Stand-zu-Stand Brücke" }
+            ]
+      }
+    ]
+
+
 type alias Model =
-    Int
+    { exercises : List Exercise }
 
 
 init : Model
 init =
-    0
+    { exercises = exercises }
 
 
 type Msg
