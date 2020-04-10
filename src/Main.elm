@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Browser
 import Dict exposing (Dict)
@@ -6,7 +6,20 @@ import Dict.Extra as DictExtra
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Json.Decode
+import Json.Encode
 import List.Extra as ListExtra
+import Task
+
+
+
+---- PORTS ----
+
+
+port ask : Json.Encode.Value -> Cmd msg
+
+
+port receive : (Json.Encode.Value -> msg) -> Sub msg
 
 
 
@@ -28,6 +41,7 @@ type alias Exercise =
 
 type alias Training =
     { id : Int
+    , date : String
     , exerciseId : Int
     , levelId : Int
     , repetitions : List Int
@@ -35,7 +49,8 @@ type alias Training =
 
 
 type alias Model =
-    { exercises : List Exercise
+    { today : String
+    , exercises : List Exercise
     , dropdownActiveExercise : Bool
     , dropdownActiveLevel : Bool
     , showDropdowns : Bool
@@ -161,6 +176,7 @@ exercises =
 trainings : List Training
 trainings =
     [ { id = 100
+      , date = "01.01.2011"
       , exerciseId = 2
       , levelId = 21
       , repetitions = [ 20, 15, 30, 40, 30 ]
@@ -208,12 +224,28 @@ getTrainingSublabel training =
 
 getTrainingById : Int -> Training
 getTrainingById trainingId =
-    Maybe.withDefault (Training 0 0 0 []) (Dict.get trainingId idToTraining)
+    Maybe.withDefault (Training 0 "" 0 0 []) (Dict.get trainingId idToTraining)
+
+
+{-| Emit a message e.g. during startup
+
+    https :// blog.revathskumar.com / 2018 / 11 / elm - send - command - on - init.html
+
+-}
+emitMessage : Msg -> Cmd Msg
+emitMessage msg =
+    let
+        identity : a -> a
+        identity a =
+            a
+    in
+    Task.succeed msg |> Task.perform identity
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { exercises = exercises
+    ( { today = "not yet initialized"
+      , exercises = exercises
       , dropdownActiveExercise = False
       , dropdownActiveLevel = False
       , showDropdowns = False
@@ -221,7 +253,7 @@ init =
       , chosenLevel = defaultLevel
       , trainings = trainings
       }
-    , Cmd.none
+    , emitMessage AskForToday
     )
 
 
@@ -230,7 +262,9 @@ init =
 
 
 type Msg
-    = ToggleShowDropdowns
+    = AskForToday
+    | ReceivedToday (Result Json.Decode.Error String)
+    | ToggleShowDropdowns
     | ToggleDropdownExercise
     | ToggleDropdownLevel
     | SelectExercise Exercise
@@ -244,6 +278,17 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        AskForToday ->
+            ( model, ask <| Json.Encode.string "today" )
+
+        ReceivedToday result ->
+            case result of
+                Ok value ->
+                    ( { model | today = value }, Cmd.none )
+
+                Err error ->
+                    ( model, Cmd.none )
+
         ToggleShowDropdowns ->
             ( { model
                 | showDropdowns = not model.showDropdowns
@@ -285,7 +330,7 @@ update msg model =
         AddTraining exercise level ->
             let
                 training =
-                    Training (generateNewTrainingId model.trainings) exercise.id level.id []
+                    Training (generateNewTrainingId model.trainings) model.today exercise.id level.id []
             in
             ( { model
                 | trainings = training :: model.trainings
@@ -496,14 +541,6 @@ viewTransformingAddButton model =
             ]
 
 
-viewDateSubheader : Model -> Html Msg
-viewDateSubheader model =
-    div [ class "has-margin-left-6 has-margin-bottom-6" ]
-        [ div [ class "is-size-4 has-text-weight-bold" ]
-            [ text "21.03.2020" ]
-        ]
-
-
 viewTraining : Int -> Int -> Training -> Html Msg
 viewTraining amountTrainings index training =
     let
@@ -527,7 +564,11 @@ viewTraining amountTrainings index training =
                 hr [] []
     in
     div []
-        [ div [ class "columns" ]
+        [ div [ class "has-margin-bottom-6" ]
+            [ div [ class "is-size-4 has-text-weight-bold" ]
+                [ text training.date ]
+            ]
+        , div [ class "columns" ]
             [ div [ class "column is-two-fifths" ]
                 [ div [ class "columns is-mobile" ]
                     [ div
@@ -615,8 +656,7 @@ viewTrainingsList model =
 
     else
         div []
-            [ viewDateSubheader model
-            , div [ class "box has-margin-left-6" ]
+            [ div [ class "box has-margin-left-6" ]
                 [ ul []
                     [ li []
                         (List.indexedMap (viewTraining (List.length model.trainings)) model.trainings)
@@ -648,11 +688,21 @@ view model =
 ---- PROGRAM ----
 
 
+todayDecoder : Json.Decode.Decoder String
+todayDecoder =
+    Json.Decode.field "today" Json.Decode.string
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    receive (Json.Decode.decodeValue todayDecoder >> ReceivedToday)
+
+
 main : Program () Model Msg
 main =
     Browser.element
         { view = view
         , init = \_ -> init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
