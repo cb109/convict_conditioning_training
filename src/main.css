@@ -22,3 +22,6 @@
   background-color: hsl(348, 100%, 61%);
   color: white;
 }
+.deleteable:hover * {
+  color: white !important;
+}

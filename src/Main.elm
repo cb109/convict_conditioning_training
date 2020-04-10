@@ -238,6 +238,7 @@ type Msg
     | AddTraining Exercise Level
     | AddRepetition Training Int
     | DeleteRepetition Training Int
+    | DeleteTraining Training
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -297,6 +298,9 @@ update msg model =
 
         DeleteRepetition training repetitionIndex ->
             ( deleteRepetitionFromTraining model training repetitionIndex, Cmd.none )
+
+        DeleteTraining training ->
+            ( { model | trainings = List.filter (\t -> t.id /= training.id) model.trainings }, Cmd.none )
 
 
 generateNewTrainingId : List Training -> Int
@@ -526,8 +530,12 @@ viewTraining amountTrainings index training =
         [ div [ class "columns" ]
             [ div [ class "column is-two-fifths" ]
                 [ div [ class "columns is-mobile" ]
-                    [ div [ class "column is-narrow" ]
-                        [ p [ class "title is-1 has-text-grey-lighter" ]
+                    [ div
+                        [ class "column is-narrow clickable deleteable"
+                        , onClick (deleteTraining training)
+                        ]
+                        [ p
+                            [ class "title is-1  has-text-grey-lighter" ]
                             [ text level ]
                         ]
                     , div [ class "column" ]
@@ -573,6 +581,11 @@ deleteRepetition training index =
     DeleteRepetition training index
 
 
+deleteTraining : Training -> Msg
+deleteTraining training =
+    DeleteTraining training
+
+
 addRepetition : Training -> Msg
 addRepetition training =
     -- TODO: Add UI to ask a number from the user
@@ -594,19 +607,31 @@ viewTrainingAddRepetitionButton training =
         ]
 
 
-viewBody : Model -> Html Msg
-viewBody model =
-    section []
-        [ div [ class "container" ]
-            [ viewTransformingAddButton model
-            , hr [] []
-            , viewDateSubheader model
+viewTrainingsList : Model -> Html Msg
+viewTrainingsList model =
+    if List.length model.trainings == 0 then
+        div [ class "has-text-grey has-text-centered" ]
+            [ text "You have not tracked any exercises so far" ]
+
+    else
+        div []
+            [ viewDateSubheader model
             , div [ class "box has-margin-left-6" ]
                 [ ul []
                     [ li []
                         (List.indexedMap (viewTraining (List.length model.trainings)) model.trainings)
                     ]
                 ]
+            ]
+
+
+viewBody : Model -> Html Msg
+viewBody model =
+    section []
+        [ div [ class "container" ]
+            [ viewTransformingAddButton model
+            , hr [] []
+            , viewTrainingsList model
             ]
         ]
 
