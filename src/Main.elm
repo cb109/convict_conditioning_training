@@ -687,7 +687,6 @@ deleteTraining training =
 
 addRepetition : Training -> Msg
 addRepetition training =
-    -- TODO: Add UI to ask a number from the user
     AddRepetition training 0
 
 
