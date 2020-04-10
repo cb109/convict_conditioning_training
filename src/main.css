@@ -20,8 +20,10 @@
 
 .deleteable:hover {
   background-color: hsl(348, 100%, 61%);
-  color: white;
 }
-.deleteable:hover * {
-  color: white !important;
+
+input.repetition-input {
+  border: none;
+  max-width: 42px;
+  background: transparent;
 }

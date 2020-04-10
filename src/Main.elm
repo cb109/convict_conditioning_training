@@ -6,6 +6,7 @@ import Dict.Extra as DictExtra
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Html.Events.Extra exposing (onChange)
 import Json.Decode
 import Json.Encode
 import List.Extra as ListExtra
@@ -58,6 +59,11 @@ type alias Model =
     , chosenLevel : Level
     , trainings : List Training
     }
+
+
+maxRepetition : Int
+maxRepetition =
+    99
 
 
 defaultLevel : Level
@@ -271,6 +277,7 @@ type Msg
     | SelectLevel Level
     | AddTraining Exercise Level
     | AddRepetition Training Int
+    | UpdateRepetition Training Int String
     | DeleteRepetition Training Int
     | DeleteTraining Training
 
@@ -341,6 +348,21 @@ update msg model =
         AddRepetition training repetition ->
             ( addRepetitionToTraining model training repetition, Cmd.none )
 
+        UpdateRepetition training repetitionIndex value ->
+            let
+                converted =
+                    String.toInt value
+            in
+            case converted of
+                Just number ->
+                    ( updateRepetitionInTraining model training repetitionIndex number, Cmd.none )
+
+                -- Delete the repetition when input was invalid, that way we can e.g.
+                -- just remove the value to trigger the deletion and don't need an extra
+                -- button or anything.
+                Nothing ->
+                    ( deleteRepetitionFromTraining model training repetitionIndex, Cmd.none )
+
         DeleteRepetition training repetitionIndex ->
             ( deleteRepetitionFromTraining model training repetitionIndex, Cmd.none )
 
@@ -370,6 +392,37 @@ addRepetitionToTraining model training repetition =
             List.map updateReps model.trainings
     in
     { model | trainings = updatedTrainings }
+
+
+updateRepetitionInTraining : Model -> Training -> Int -> Int -> Model
+updateRepetitionInTraining model training repetitionIndex newValue =
+    -- Limit value to two digits
+    if newValue > maxRepetition then
+        model
+
+    else
+        let
+            updateRepetitionValues index oldValue =
+                if index == repetitionIndex then
+                    newValue
+
+                else
+                    oldValue
+
+            updatedRepetitions =
+                List.indexedMap updateRepetitionValues training.repetitions
+
+            updateReps currentTraining =
+                if currentTraining.id == training.id then
+                    { currentTraining | repetitions = updatedRepetitions }
+
+                else
+                    currentTraining
+
+            updatedTrainings =
+                List.map updateReps model.trainings
+        in
+        { model | trainings = updatedTrainings }
 
 
 deleteRepetitionFromTraining : Model -> Training -> Int -> Model
@@ -611,10 +664,15 @@ viewTrainingTags training =
 viewTrainingRepetition : Training -> Int -> Int -> Html Msg
 viewTrainingRepetition training index repetition =
     span
-        [ class "tag is-large clickable deleteable"
-        , onClick (deleteRepetition training index)
+        [ class "tag is-large is-paddingless" ]
+        [ input
+            [ class "input repetition-input"
+            , type_ "text"
+            , value (String.fromInt repetition)
+            , onChange (UpdateRepetition training index)
+            ]
+            []
         ]
-        [ text (String.fromInt repetition) ]
 
 
 deleteRepetition : Training -> Int -> Msg
