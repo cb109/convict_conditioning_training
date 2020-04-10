@@ -564,8 +564,8 @@ viewTraining amountTrainings index training =
                 hr [] []
     in
     div []
-        [ div [ class "has-margin-bottom-6" ]
-            [ div [ class "is-size-4 has-text-weight-bold" ]
+        [ div [ class "has-margin-bottom-7" ]
+            [ div [ class "is-size-5 has-text-grey-light" ]
                 [ text training.date ]
             ]
         , div [ class "columns" ]
