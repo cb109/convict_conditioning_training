@@ -8,7 +8,7 @@ This is a little progress tracker for the exercises listed in the [Convict Condi
 
 ## Tech Stack
 
-- The Frontend is written in [Elm](https://elm-lang.org/)
+- The Frontend is written in [Elm](https://elm-lang.org/) and styled with [Bulma](https://bulma.io/)
 - There is no real backend, data is simply synced to a [Firebase Cloud Firestore](https://firebase.google.com/docs/firestore), the database rules are setup as proposed in [this helpful blog post](https://lengrand.fr/using-firebase-in-elm/) by Julien Lengrand-Lambert
 
 
