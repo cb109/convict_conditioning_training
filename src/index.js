@@ -32,7 +32,7 @@ const app = Elm.Main.init({
 
 
 app.ports.signIn.subscribe(() => {
-  console.log('login');
+  console.log('signIn');
   firebase
     .auth()
     .signInWithPopup(provider)
@@ -51,8 +51,57 @@ app.ports.signIn.subscribe(() => {
 });
 
 app.ports.signOut.subscribe(() => {
-  console.log('logout');
+  console.log('signOut');
   firebase.auth().signOut();
+});
+
+//  Observer on user info
+firebase.auth().onAuthStateChanged(user => {
+  console.log("onAuthStateChanged");
+  if (user) {
+    user
+      .getIdToken()
+      .then(idToken => {
+        app.ports.signInInfo.send({
+          token: idToken,
+          email: user.email,
+          uid: user.uid
+        });
+      })
+      .catch(error => {
+        console.error("Error when retrieving cached user");
+        console.error(error);
+      });
+
+    // // Set up listened on new trainings
+    // db.collection(`users/${user.uid}/trainings`).onSnapshot(docs => {
+    //   console.log("Received new snapshot");
+    //   const trainings = [];
+
+    //   docs.forEach(doc => {
+    //     if (doc.data().content) {
+    //       trainings.push(doc.data().content);
+    //     }
+    //   });
+
+    //   app.ports.receiveTrainings.send({
+    //     trainings: trainings
+    //   });
+    // });
+  }
+});
+
+app.ports.saveTraining.subscribe(data => {
+  const pretty = JSON.stringify(data.content, undefined, 2);
+  console.log(`saving training to database : ${pretty}`);
+
+  db.collection(`users/${data.uid}/trainings`)
+    .add({
+      content: data.content
+    })
+    .catch(error => {
+      console.error(error);
+    });
 });
 
 function getTodayString() {

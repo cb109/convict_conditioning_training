@@ -33,6 +33,12 @@ port signInInfo : (Json.Encode.Value -> msg) -> Sub msg
 port signOut : () -> Cmd msg
 
 
+port saveTraining : Json.Encode.Value -> Cmd msg
+
+
+port receiveTrainings : (Json.Encode.Value -> msg) -> Sub msg
+
+
 
 ---- MODEL ----
 
@@ -253,7 +259,7 @@ getTrainingById trainingId =
 
 {-| Emit a message e.g. during startup
 
-    https :// blog.revathskumar.com / 2018 / 11 / elm - send - command - on - init.html
+-- <https://blog.revathskumar.com/2018/11/elm-send-command-on-init.html>
 
 -}
 emitMessage : Msg -> Cmd Msg
@@ -268,7 +274,7 @@ emitMessage msg =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { today = "not yet initialized"
+    ( { today = ""
       , userData = Maybe.Nothing
       , exercises = exercises
       , dropdownActiveExercise = False
@@ -290,6 +296,7 @@ type Msg
     = LogIn
     | LoggedInData (Result Json.Decode.Error UserData)
     | LogOut
+    | SaveTraining Training
     | AskForToday
     | ReceivedToday (Result Json.Decode.Error String)
     | ToggleShowDropdowns
@@ -302,6 +309,30 @@ type Msg
     | UpdateRepetition Training Int String
     | DeleteRepetition Training Int
     | DeleteTraining Training
+
+
+trainingEncoder : Model -> Training -> Json.Encode.Value
+trainingEncoder model training =
+    Json.Encode.object
+        [ ( "content"
+          , Json.Encode.object
+                [ ( "id", Json.Encode.string (String.fromInt training.id) )
+                , ( "exerciseId", Json.Encode.string (String.fromInt training.exerciseId) )
+                , ( "levelId", Json.Encode.string (String.fromInt training.levelId) )
+                , ( "repetitions"
+                  , Json.Encode.list Json.Encode.int training.repetitions
+                  )
+                ]
+          )
+        , ( "uid"
+          , case model.userData of
+                Just userData ->
+                    Json.Encode.string userData.uid
+
+                Maybe.Nothing ->
+                    Json.Encode.null
+          )
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -320,6 +351,9 @@ update msg model =
 
         LogOut ->
             ( { model | userData = Maybe.Nothing }, signOut () )
+
+        SaveTraining training ->
+            ( model, Cmd.none )
 
         AskForToday ->
             ( model, ask <| Json.Encode.string "today" )
@@ -378,7 +412,7 @@ update msg model =
             ( { model
                 | trainings = training :: model.trainings
               }
-            , Cmd.none
+            , saveTraining <| trainingEncoder model training
             )
 
         AddRepetition training repetition ->
@@ -823,7 +857,7 @@ userDataDecoder =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Sub.batch
         [ receive (Json.Decode.decodeValue todayDecoder >> ReceivedToday)
         , signInInfo (Json.Decode.decodeValue userDataDecoder >> LoggedInData)
