@@ -74,21 +74,24 @@ firebase.auth().onAuthStateChanged(user => {
         console.error(error);
       });
 
-    // // Set up listened on new trainings
-    // db.collection(`users/${user.uid}/trainings`).onSnapshot(docs => {
-    //   console.log('Received new snapshot');
-    //   const trainings = [];
+    // Set up listened on new trainings
+    db.collection(`users/${user.uid}/trainings`).onSnapshot(docs => {
+      console.log('Received new snapshot');
+      const trainings = [];
+      console.log('docs', docs);
 
-    //   docs.forEach(doc => {
-    //     if (doc.data().content) {
-    //       trainings.push(doc.data().content);
-    //     }
-    //   });
+      docs.forEach(doc => {
+        console.log('doc.data()', doc.data());
+        const content = doc.data().content;
+        if (content) {
+          trainings.push(content);
+        }
+      });
 
-    //   app.ports.receiveTrainings.send({
-    //     trainings: trainings
-    //   });
-    // });
+      app.ports.receiveTrainings.send({
+        trainings: trainings
+      });
+    });
   }
 });
 
@@ -96,7 +99,7 @@ app.ports.saveTraining.subscribe(data => {
   const pretty = JSON.stringify(data.content, undefined, 2);
   console.log(`Saving training to database : ${pretty}`);
 
-  db.collection(`users/${data.uid}/trainings`).doc(data.content.id)
+  db.collection(`users/${data.uid}/trainings`).doc(String(data.content.id))
     .set({
       content: data.content
     })

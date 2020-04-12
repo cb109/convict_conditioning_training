@@ -43,6 +43,13 @@ port receiveTrainings : (Json.Encode.Value -> msg) -> Sub msg
 ---- MODEL ----
 
 
+type alias ErrorData =
+    { code : Maybe String
+    , message : Maybe String
+    , credential : Maybe String
+    }
+
+
 type alias UserData =
     { token : String
     , email : String
@@ -73,7 +80,8 @@ type alias Training =
 
 
 type alias Model =
-    { today : String
+    { error : ErrorData
+    , today : String
     , userData : Maybe UserData
     , exercises : List Exercise
     , dropdownActiveExercise : Bool
@@ -208,6 +216,16 @@ trainings =
     []
 
 
+messageToError : String -> ErrorData
+messageToError message =
+    { code = Maybe.Nothing, credential = Maybe.Nothing, message = Just message }
+
+
+emptyError : ErrorData
+emptyError =
+    { code = Maybe.Nothing, credential = Maybe.Nothing, message = Maybe.Nothing }
+
+
 idToExercise : Dict Int Exercise
 idToExercise =
     DictExtra.fromListBy .id exercises
@@ -268,7 +286,8 @@ emitMessage msg =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { today = ""
+    ( { error = emptyError
+      , today = ""
       , userData = Maybe.Nothing
       , exercises = exercises
       , dropdownActiveExercise = False
@@ -287,7 +306,8 @@ init =
 
 
 type Msg
-    = LogIn
+    = RemoveErrorMessage
+    | LogIn
     | LoggedInData (Result Json.Decode.Error UserData)
     | LogOut
     | TrainingsReceived (Result Json.Decode.Error (List Training))
@@ -308,6 +328,9 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        RemoveErrorMessage ->
+            ( { model | error = emptyError }, Cmd.none )
+
         LogIn ->
             ( model, signIn () )
 
@@ -317,7 +340,7 @@ update msg model =
                     ( { model | userData = Just value }, Cmd.none )
 
                 Err error ->
-                    ( model, Cmd.none )
+                    ( { model | error = messageToError <| Json.Decode.errorToString error }, Cmd.none )
 
         LogOut ->
             ( { model | userData = Maybe.Nothing }, signOut () )
@@ -325,10 +348,10 @@ update msg model =
         TrainingsReceived result ->
             case result of
                 Ok value ->
-                    ( { model | trainings = [] }, Cmd.none )
+                    ( { model | trainings = value }, Cmd.none )
 
                 Err error ->
-                    ( model, Cmd.none )
+                    ( { model | error = messageToError <| Json.Decode.errorToString error }, Cmd.none )
 
         AskForToday ->
             ( model, ask <| Json.Encode.string "today" )
@@ -806,6 +829,18 @@ viewTrainingsList model =
             ]
 
 
+viewError : Model -> Html Msg
+viewError model =
+    if model.error /= emptyError then
+        div [ class "notification is-danger is-marginless is-radiusless" ]
+            [ div [ class "delete", onClick RemoveErrorMessage ] []
+            , text (Maybe.withDefault "" model.error.message)
+            ]
+
+    else
+        span [] []
+
+
 viewBody : Model -> Html Msg
 viewBody model =
     section []
@@ -823,7 +858,8 @@ viewBody model =
 view : Model -> Html Msg
 view model =
     div []
-        [ viewHeader model
+        [ viewError model
+        , viewHeader model
         , if model.userData == Maybe.Nothing then
             span [] []
 
@@ -854,9 +890,10 @@ trainingEncoder model training =
     Json.Encode.object
         [ ( "content"
           , Json.Encode.object
-                [ ( "id", Json.Encode.string (String.fromInt training.id) )
-                , ( "exerciseId", Json.Encode.string (String.fromInt training.exerciseId) )
-                , ( "levelId", Json.Encode.string (String.fromInt training.levelId) )
+                [ ( "id", Json.Encode.int training.id )
+                , ( "date", Json.Encode.string training.date )
+                , ( "exerciseId", Json.Encode.int training.exerciseId )
+                , ( "levelId", Json.Encode.int training.levelId )
                 , ( "repetitions"
                   , Json.Encode.list Json.Encode.int training.repetitions
                   )
@@ -877,7 +914,7 @@ trainingDecoder : Json.Decode.Decoder Training
 trainingDecoder =
     Json.Decode.succeed Training
         |> Json.Decode.Pipeline.required "id" Json.Decode.int
-        |> Json.Decode.Pipeline.required "today" Json.Decode.string
+        |> Json.Decode.Pipeline.required "date" Json.Decode.string
         |> Json.Decode.Pipeline.required "exerciseId" Json.Decode.int
         |> Json.Decode.Pipeline.required "levelId" Json.Decode.int
         |> Json.Decode.Pipeline.required "repetitions" (Json.Decode.list Json.Decode.int)
