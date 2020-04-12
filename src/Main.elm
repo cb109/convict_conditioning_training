@@ -36,9 +36,10 @@ port signOut : () -> Cmd msg
 port saveTraining : Json.Encode.Value -> Cmd msg
 
 
+port receiveTrainings : (Json.Encode.Value -> msg) -> Sub msg
 
--- port removeTraining : Json.Encode.Value -> Cmd msg
--- port receiveTrainings : (Json.Encode.Value -> msg) -> Sub msg
+
+
 ---- MODEL ----
 
 
@@ -204,13 +205,7 @@ exercises =
 
 trainings : List Training
 trainings =
-    [ { id = 100
-      , date = "01.01.2011"
-      , exerciseId = 2
-      , levelId = 21
-      , repetitions = [ 20, 15, 30, 40, 30 ]
-      }
-    ]
+    []
 
 
 idToExercise : Dict Int Exercise
@@ -295,6 +290,7 @@ type Msg
     = LogIn
     | LoggedInData (Result Json.Decode.Error UserData)
     | LogOut
+    | TrainingsReceived (Result Json.Decode.Error (List Training))
     | AskForToday
     | ReceivedToday (Result Json.Decode.Error String)
     | ToggleShowDropdowns
@@ -307,30 +303,6 @@ type Msg
     | UpdateRepetition Training Int String
     | DeleteRepetition Training Int
     | DeleteTraining Training
-
-
-trainingEncoder : Model -> Training -> Json.Encode.Value
-trainingEncoder model training =
-    Json.Encode.object
-        [ ( "content"
-          , Json.Encode.object
-                [ ( "id", Json.Encode.string (String.fromInt training.id) )
-                , ( "exerciseId", Json.Encode.string (String.fromInt training.exerciseId) )
-                , ( "levelId", Json.Encode.string (String.fromInt training.levelId) )
-                , ( "repetitions"
-                  , Json.Encode.list Json.Encode.int training.repetitions
-                  )
-                ]
-          )
-        , ( "uid"
-          , case model.userData of
-                Just userData ->
-                    Json.Encode.string userData.uid
-
-                Maybe.Nothing ->
-                    Json.Encode.null
-          )
-        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -349,6 +321,14 @@ update msg model =
 
         LogOut ->
             ( { model | userData = Maybe.Nothing }, signOut () )
+
+        TrainingsReceived result ->
+            case result of
+                Ok value ->
+                    ( { model | trainings = [] }, Cmd.none )
+
+                Err error ->
+                    ( model, Cmd.none )
 
         AskForToday ->
             ( model, ask <| Json.Encode.string "today" )
@@ -829,7 +809,10 @@ viewTrainingsList model =
 viewBody : Model -> Html Msg
 viewBody model =
     section []
-        [ div [ class "container" ]
+        [ div
+            [ class "container"
+            , style "max-width" "720px"
+            ]
             [ viewTransformingAddButton model
             , hr [] []
             , viewTrainingsList model
@@ -866,11 +849,52 @@ userDataDecoder =
         |> Json.Decode.Pipeline.required "uid" Json.Decode.string
 
 
+trainingEncoder : Model -> Training -> Json.Encode.Value
+trainingEncoder model training =
+    Json.Encode.object
+        [ ( "content"
+          , Json.Encode.object
+                [ ( "id", Json.Encode.string (String.fromInt training.id) )
+                , ( "exerciseId", Json.Encode.string (String.fromInt training.exerciseId) )
+                , ( "levelId", Json.Encode.string (String.fromInt training.levelId) )
+                , ( "repetitions"
+                  , Json.Encode.list Json.Encode.int training.repetitions
+                  )
+                ]
+          )
+        , ( "uid"
+          , case model.userData of
+                Just userData ->
+                    Json.Encode.string userData.uid
+
+                Maybe.Nothing ->
+                    Json.Encode.null
+          )
+        ]
+
+
+trainingDecoder : Json.Decode.Decoder Training
+trainingDecoder =
+    Json.Decode.succeed Training
+        |> Json.Decode.Pipeline.required "id" Json.Decode.int
+        |> Json.Decode.Pipeline.required "today" Json.Decode.string
+        |> Json.Decode.Pipeline.required "exerciseId" Json.Decode.int
+        |> Json.Decode.Pipeline.required "levelId" Json.Decode.int
+        |> Json.Decode.Pipeline.required "repetitions" (Json.Decode.list Json.Decode.int)
+
+
+trainingListDecoder : Json.Decode.Decoder (List Training)
+trainingListDecoder =
+    Json.Decode.succeed identity
+        |> Json.Decode.Pipeline.required "trainings" (Json.Decode.list trainingDecoder)
+
+
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ receive (Json.Decode.decodeValue todayDecoder >> ReceivedToday)
         , signInInfo (Json.Decode.decodeValue userDataDecoder >> LoggedInData)
+        , receiveTrainings (Json.Decode.decodeValue trainingListDecoder >> TrainingsReceived)
         ]
 
 

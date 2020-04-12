@@ -107,7 +107,7 @@ app.ports.saveTraining.subscribe(data => {
 
 // app.ports.removeTraining.subscribe(data => {
 //   const pretty = JSON.stringify(data.content, undefined, 2);
-//   console.log(`removing training from database : ${pretty}`);
+//   console.log(`Removing training from database : ${pretty}`);
 
 //   db.collection(`users/${data.uid}/trainings`).doc(data.content.id)
 //     .delete()
