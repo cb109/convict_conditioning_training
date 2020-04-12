@@ -19,3 +19,20 @@ This is a little progress tracker for the exercises listed in the [Convict Condi
 - Run `$ npm install` to install the firebase dependencies
 - Prepare `.env` file with your firebase values as described in the blog post mentioned above
 - Run `$ elm-app start`
+
+
+## Deployment
+
+- `$ elm-app build`
+- Copy `build` folder somewhere a web server is serving static files from
+- E.g. a super simple nginx setup could look like:
+  ```nginx
+  server {
+    listen 443;
+    server_name your.domain.com;
+    location / {
+      root /var/www/convict;
+      error_page 404 =200 /index.html;
+    }
+  }
+  ```
