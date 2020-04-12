@@ -36,10 +36,9 @@ port signOut : () -> Cmd msg
 port saveTraining : Json.Encode.Value -> Cmd msg
 
 
-port receiveTrainings : (Json.Encode.Value -> msg) -> Sub msg
 
-
-
+-- port removeTraining : Json.Encode.Value -> Cmd msg
+-- port receiveTrainings : (Json.Encode.Value -> msg) -> Sub msg
 ---- MODEL ----
 
 
@@ -296,7 +295,6 @@ type Msg
     = LogIn
     | LoggedInData (Result Json.Decode.Error UserData)
     | LogOut
-    | SaveTraining Training
     | AskForToday
     | ReceivedToday (Result Json.Decode.Error String)
     | ToggleShowDropdowns
@@ -351,9 +349,6 @@ update msg model =
 
         LogOut ->
             ( { model | userData = Maybe.Nothing }, signOut () )
-
-        SaveTraining training ->
-            ( model, Cmd.none )
 
         AskForToday ->
             ( model, ask <| Json.Encode.string "today" )
@@ -416,7 +411,9 @@ update msg model =
             )
 
         AddRepetition training repetition ->
-            ( addRepetitionToTraining model training repetition, Cmd.none )
+            ( addRepetitionToTraining model training repetition
+            , saveTraining <| trainingEncoder model training
+            )
 
         UpdateRepetition training repetitionIndex value ->
             let
@@ -425,16 +422,22 @@ update msg model =
             in
             case converted of
                 Just number ->
-                    ( updateRepetitionInTraining model training repetitionIndex number, Cmd.none )
+                    ( updateRepetitionInTraining model training repetitionIndex number
+                    , saveTraining <| trainingEncoder model training
+                    )
 
                 -- Delete the repetition when input was invalid, that way we can e.g.
                 -- just remove the value to trigger the deletion and don't need an extra
                 -- button or anything.
                 Nothing ->
-                    ( deleteRepetitionFromTraining model training repetitionIndex, Cmd.none )
+                    ( deleteRepetitionFromTraining model training repetitionIndex
+                    , saveTraining <| trainingEncoder model training
+                    )
 
         DeleteRepetition training repetitionIndex ->
-            ( deleteRepetitionFromTraining model training repetitionIndex, Cmd.none )
+            ( deleteRepetitionFromTraining model training repetitionIndex
+            , saveTraining <| trainingEncoder model training
+            )
 
         DeleteTraining training ->
             ( { model | trainings = List.filter (\t -> t.id /= training.id) model.trainings }, Cmd.none )
@@ -536,7 +539,7 @@ viewLoginLogoutButtons model =
 
           else
             div []
-                [ button [ class "button is-small is-info is-outlined is-inverted" ]
+                [ button [ class "button is-medium has-margin-top-5 is-info is-inverted" ]
                     [ span
                         [ onClick LogIn ]
                         [ text "Login with Google" ]
@@ -547,7 +550,10 @@ viewLoginLogoutButtons model =
 
 viewHeader : Model -> Html Msg
 viewHeader model =
-    section [ class "hero is-small is-info has-text-centered" ]
+    section
+        [ class "hero is-small is-info has-text-centered"
+        , classList [ ( "is-fullheight", model.userData == Maybe.Nothing ) ]
+        ]
         [ div [ class "hero-body" ]
             [ div [ class "container" ]
                 [ h1 [ class "title" ]
@@ -835,7 +841,11 @@ view : Model -> Html Msg
 view model =
     div []
         [ viewHeader model
-        , viewBody model
+        , if model.userData == Maybe.Nothing then
+            span [] []
+
+          else
+            viewBody model
         ]
 
 

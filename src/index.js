@@ -2,9 +2,9 @@ import './main.css';
 import './spacing.css';
 
 import { Elm } from './Main.elm';
-import * as firebase from "firebase/app";
-import "firebase/auth";
-import "firebase/firestore";
+import * as firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/firestore';
 
 import * as serviceWorker from './serviceWorker';
 
@@ -46,6 +46,7 @@ app.ports.signIn.subscribe(() => {
       });
     })
     .catch(error => {
+      alert('Error when logging in');
       console.error(error);
     });
 });
@@ -57,7 +58,7 @@ app.ports.signOut.subscribe(() => {
 
 //  Observer on user info
 firebase.auth().onAuthStateChanged(user => {
-  console.log("onAuthStateChanged");
+  console.log('onAuthStateChanged');
   if (user) {
     user
       .getIdToken()
@@ -69,13 +70,13 @@ firebase.auth().onAuthStateChanged(user => {
         });
       })
       .catch(error => {
-        console.error("Error when retrieving cached user");
+        alert('Error when retrieving cached user');
         console.error(error);
       });
 
     // // Set up listened on new trainings
     // db.collection(`users/${user.uid}/trainings`).onSnapshot(docs => {
-    //   console.log("Received new snapshot");
+    //   console.log('Received new snapshot');
     //   const trainings = [];
 
     //   docs.forEach(doc => {
@@ -93,16 +94,27 @@ firebase.auth().onAuthStateChanged(user => {
 
 app.ports.saveTraining.subscribe(data => {
   const pretty = JSON.stringify(data.content, undefined, 2);
-  console.log(`saving training to database : ${pretty}`);
+  console.log(`Saving training to database : ${pretty}`);
 
-  db.collection(`users/${data.uid}/trainings`)
-    .add({
+  db.collection(`users/${data.uid}/trainings`).doc(data.content.id)
+    .set({
       content: data.content
     })
     .catch(error => {
       console.error(error);
     });
 });
+
+// app.ports.removeTraining.subscribe(data => {
+//   const pretty = JSON.stringify(data.content, undefined, 2);
+//   console.log(`removing training from database : ${pretty}`);
+
+//   db.collection(`users/${data.uid}/trainings`).doc(data.content.id)
+//     .delete()
+//     .catch(error => {
+//       console.error(error);
+//     });
+// });
 
 function getTodayString() {
   return (new Date()).toJSON().slice(0, 10).split('-').reverse().join('.');
