@@ -653,7 +653,7 @@ viewTransformingAddButton model =
 
     else
         div [ class "level" ]
-            [ div [ class "level-item" ]
+            [ div [ class "level-item has-margin-top-6" ]
                 [ viewButtonAddExercise ]
             ]
 
