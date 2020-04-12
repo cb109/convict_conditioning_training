@@ -231,11 +231,6 @@ idToExercise =
     DictExtra.fromListBy .id exercises
 
 
-idToTraining : Dict Int Training
-idToTraining =
-    DictExtra.fromListBy .id trainings
-
-
 getTrainingLabel : Training -> String
 getTrainingLabel training =
     (Maybe.withDefault (Exercise 0 "" []) (Dict.get training.exerciseId idToExercise)).name
@@ -264,8 +259,12 @@ getTrainingSublabel training =
     (Maybe.withDefault (Level 0 "") (ListExtra.getAt levelIndex exercise.levels)).name
 
 
-getTrainingById : Int -> Training
-getTrainingById trainingId =
+getTrainingById : Model -> Int -> Training
+getTrainingById model trainingId =
+    let
+        idToTraining =
+            DictExtra.fromListBy .id model.trainings
+    in
     Maybe.withDefault (Training 0 "" 0 0 []) (Dict.get trainingId idToTraining)
 
 
@@ -321,7 +320,6 @@ type Msg
     | AddTraining Exercise Level
     | AddRepetition Training Int
     | UpdateRepetition Training Int String
-    | DeleteRepetition Training Int
     | DeleteTraining Training
 
 
@@ -348,7 +346,7 @@ update msg model =
         TrainingsReceived result ->
             case result of
                 Ok value ->
-                    ( { model | trainings = value }, Cmd.none )
+                    ( { model | trainings = List.reverse value }, Cmd.none )
 
                 Err error ->
                     ( { model | error = messageToError <| Json.Decode.errorToString error }, Cmd.none )
@@ -415,7 +413,7 @@ update msg model =
 
         AddRepetition training repetition ->
             ( addRepetitionToTraining model training repetition
-            , saveTraining <| trainingEncoder model training
+            , Cmd.none
             )
 
         UpdateRepetition training repetitionIndex value ->
@@ -425,22 +423,31 @@ update msg model =
             in
             case converted of
                 Just number ->
-                    ( updateRepetitionInTraining model training repetitionIndex number
-                    , saveTraining <| trainingEncoder model training
+                    let
+                        updatedModel =
+                            updateRepetitionInTraining model training repetitionIndex number
+
+                        updatedTraining =
+                            getTrainingById updatedModel training.id
+                    in
+                    ( updatedModel
+                    , saveTraining <| trainingEncoder updatedModel updatedTraining
                     )
 
                 -- Delete the repetition when input was invalid, that way we can e.g.
                 -- just remove the value to trigger the deletion and don't need an extra
                 -- button or anything.
                 Nothing ->
-                    ( deleteRepetitionFromTraining model training repetitionIndex
-                    , saveTraining <| trainingEncoder model training
-                    )
+                    let
+                        updatedModel =
+                            deleteRepetitionFromTraining model training repetitionIndex
 
-        DeleteRepetition training repetitionIndex ->
-            ( deleteRepetitionFromTraining model training repetitionIndex
-            , saveTraining <| trainingEncoder model training
-            )
+                        updatedTraining =
+                            getTrainingById updatedModel training.id
+                    in
+                    ( deleteRepetitionFromTraining model training repetitionIndex
+                    , saveTraining <| trainingEncoder updatedModel updatedTraining
+                    )
 
         DeleteTraining training ->
             ( { model | trainings = List.filter (\t -> t.id /= training.id) model.trainings }, Cmd.none )
@@ -726,7 +733,7 @@ viewTraining amountTrainings index training =
     div []
         [ div [ class "has-margin-bottom-7" ]
             [ div [ class "is-size-5 has-text-grey-light" ]
-                [ text training.date ]
+                [ text (String.fromInt training.id ++ " " ++ training.date) ]
             ]
         , div [ class "columns" ]
             [ div [ class "column is-two-fifths" ]
@@ -780,11 +787,6 @@ viewTrainingRepetition training index repetition =
             ]
             []
         ]
-
-
-deleteRepetition : Training -> Int -> Msg
-deleteRepetition training index =
-    DeleteRepetition training index
 
 
 deleteTraining : Training -> Msg

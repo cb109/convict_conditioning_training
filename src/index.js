@@ -103,7 +103,11 @@ app.ports.saveTraining.subscribe(data => {
     .set({
       content: data.content
     })
+    .then(() => {
+      console.log('Training has been saved');
+    })
     .catch(error => {
+      alert('Error when saving Training');
       console.error(error);
     });
 });
