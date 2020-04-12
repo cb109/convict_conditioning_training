@@ -4,7 +4,7 @@ This is a little progress tracker for the exercises listed in the [Convict Condi
 
 ## Look & Feel
 
-![](https://i.imgur.com/Wo4Fcnu.gifv)
+![](https://i.imgur.com/Wo4Fcnu.gif)
 
 ## Tech Stack
 
