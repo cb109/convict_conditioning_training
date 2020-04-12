@@ -1,0 +1,30 @@
+{
+  "name": "convict_conditioning_training",
+  "version": "1.0.0",
+  "description": "Progress tracker for the convict-conditioning exercises by Paul Wade",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "firebase": "^6.3.3",
+    "firebase-app": "0.0.1"
+  },
+  "devDependencies": {
+    "create-elm-app": "^4.2.5"
+  },
+  "scripts": {
+    "build": "elm-app build",
+    "start": "elm-app start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cb109/convict_conditioning_training.git"
+  },
+  "author": "Christoph Buelter <buelter.christoph@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cb109/convict_conditioning_training/issues"
+  },
+  "homepage": "https://github.com/cb109/convict_conditioning_training#readme"
+}
