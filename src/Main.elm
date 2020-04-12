@@ -8,6 +8,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Html.Events.Extra exposing (onChange)
 import Json.Decode
+import Json.Decode.Pipeline
 import Json.Encode
 import List.Extra as ListExtra
 import Task
@@ -23,8 +24,24 @@ port ask : Json.Encode.Value -> Cmd msg
 port receive : (Json.Encode.Value -> msg) -> Sub msg
 
 
+port signIn : () -> Cmd msg
+
+
+port signInInfo : (Json.Encode.Value -> msg) -> Sub msg
+
+
+port signOut : () -> Cmd msg
+
+
 
 ---- MODEL ----
+
+
+type alias UserData =
+    { token : String
+    , email : String
+    , uid : String
+    }
 
 
 type alias Level =
@@ -51,6 +68,7 @@ type alias Training =
 
 type alias Model =
     { today : String
+    , userData : Maybe UserData
     , exercises : List Exercise
     , dropdownActiveExercise : Bool
     , dropdownActiveLevel : Bool
@@ -251,6 +269,7 @@ emitMessage msg =
 init : ( Model, Cmd Msg )
 init =
     ( { today = "not yet initialized"
+      , userData = Maybe.Nothing
       , exercises = exercises
       , dropdownActiveExercise = False
       , dropdownActiveLevel = False
@@ -268,7 +287,10 @@ init =
 
 
 type Msg
-    = AskForToday
+    = LogIn
+    | LoggedInData (Result Json.Decode.Error UserData)
+    | LogOut
+    | AskForToday
     | ReceivedToday (Result Json.Decode.Error String)
     | ToggleShowDropdowns
     | ToggleDropdownExercise
@@ -285,6 +307,20 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        LogIn ->
+            ( model, signIn () )
+
+        LoggedInData result ->
+            case result of
+                Ok value ->
+                    ( { model | userData = Just value }, Cmd.none )
+
+                Err error ->
+                    ( model, Cmd.none )
+
+        LogOut ->
+            ( { model | userData = Maybe.Nothing }, signOut () )
+
         AskForToday ->
             ( model, ask <| Json.Encode.string "today" )
 
@@ -448,15 +484,43 @@ deleteRepetitionFromTraining model training repetitionIndex =
 ---- VIEW ----
 
 
+viewLoginLogoutButtons : Model -> Html Msg
+viewLoginLogoutButtons model =
+    let
+        email =
+            (Maybe.withDefault (UserData "" "" "") model.userData).email
+    in
+    div []
+        [ if model.userData /= Maybe.Nothing then
+            div []
+                [ button [ class "button is-small is-info is-outlined is-inverted" ]
+                    [ span
+                        [ onClick LogOut ]
+                        [ text ("Logout: " ++ email) ]
+                    ]
+                ]
+
+          else
+            div []
+                [ button [ class "button is-small is-info is-outlined is-inverted" ]
+                    [ span
+                        [ onClick LogIn ]
+                        [ text "Login with Google" ]
+                    ]
+                ]
+        ]
+
+
 viewHeader : Model -> Html Msg
-viewHeader _ =
+viewHeader model =
     section [ class "hero is-small is-info has-text-centered" ]
         [ div [ class "hero-body" ]
             [ div [ class "container" ]
                 [ h1 [ class "title" ]
                     [ text "Convict Conditioning" ]
-                , h2 [ class "subtitle" ]
+                , h2 [ class "subtitle has-margin-bottom-7" ]
                     [ text "Training Progress Log" ]
+                , viewLoginLogoutButtons model
                 ]
             ]
         ]
@@ -465,7 +529,7 @@ viewHeader _ =
 viewButtonAddExercise : Html Msg
 viewButtonAddExercise =
     button
-        [ class "button is-medium is-success is-inverted has-margin-top-6"
+        [ class "button is-medium is-success is-inverted"
         , onClick ToggleShowDropdowns
         ]
         [ span [ class "icon" ]
@@ -750,9 +814,20 @@ todayDecoder =
     Json.Decode.field "today" Json.Decode.string
 
 
+userDataDecoder : Json.Decode.Decoder UserData
+userDataDecoder =
+    Json.Decode.succeed UserData
+        |> Json.Decode.Pipeline.required "token" Json.Decode.string
+        |> Json.Decode.Pipeline.required "email" Json.Decode.string
+        |> Json.Decode.Pipeline.required "uid" Json.Decode.string
+
+
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    receive (Json.Decode.decodeValue todayDecoder >> ReceivedToday)
+subscriptions model =
+    Sub.batch
+        [ receive (Json.Decode.decodeValue todayDecoder >> ReceivedToday)
+        , signInInfo (Json.Decode.decodeValue userDataDecoder >> LoggedInData)
+        ]
 
 
 main : Program () Model Msg
