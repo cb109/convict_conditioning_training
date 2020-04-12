@@ -30,6 +30,9 @@ const app = Elm.Main.init({
   node: document.getElementById('root')
 });
 
+function prettifyJson(data) {
+  return JSON.stringify(data, undefined, 2);
+}
 
 app.ports.signIn.subscribe(() => {
   console.log('signIn');
@@ -56,7 +59,26 @@ app.ports.signOut.subscribe(() => {
   firebase.auth().signOut();
 });
 
-//  Observer on user info
+function getTrainingsSnapshotForUser(userId) {
+  console.log('Fetching trainings snapshot...');
+  return db.collection(`users/${userId}/trainings`).get();
+}
+
+function forwardTrainingDocumentsToElm(docs) {
+  const trainings = [];
+
+  docs.forEach(doc => {
+    const content = doc.data().content;
+    if (content) {
+      trainings.push(content);
+    }
+  });
+
+  app.ports.receiveTrainings.send({
+    trainings: trainings
+  });
+}
+
 firebase.auth().onAuthStateChanged(user => {
   console.log('onAuthStateChanged');
   if (user) {
@@ -77,27 +99,13 @@ firebase.auth().onAuthStateChanged(user => {
     // Set up listened on new trainings
     db.collection(`users/${user.uid}/trainings`).onSnapshot(docs => {
       console.log('Received new snapshot');
-      const trainings = [];
-      console.log('docs', docs);
-
-      docs.forEach(doc => {
-        console.log('doc.data()', doc.data());
-        const content = doc.data().content;
-        if (content) {
-          trainings.push(content);
-        }
-      });
-
-      app.ports.receiveTrainings.send({
-        trainings: trainings
-      });
+      forwardTrainingDocumentsToElm(docs);
     });
   }
 });
 
 app.ports.saveTraining.subscribe(data => {
-  const pretty = JSON.stringify(data.content, undefined, 2);
-  console.log(`Saving training to database : ${pretty}`);
+  console.log(`Saving training to database: ${prettifyJson(data.content)}`);
 
   db.collection(`users/${data.uid}/trainings`).doc(String(data.content.id))
     .set({
@@ -112,16 +120,29 @@ app.ports.saveTraining.subscribe(data => {
     });
 });
 
-// app.ports.removeTraining.subscribe(data => {
-//   const pretty = JSON.stringify(data.content, undefined, 2);
-//   console.log(`Removing training from database : ${pretty}`);
+app.ports.removeTraining.subscribe(data => {
+  console.log(`Removing training from database: ${prettifyJson(data.content)}`);
 
-//   db.collection(`users/${data.uid}/trainings`).doc(data.content.id)
-//     .delete()
-//     .catch(error => {
-//       console.error(error);
-//     });
-// });
+  const confirmed = confirm('Do you really want to remove this training?');
+  if (!confirmed) {
+    // Ensure the change in the model is reversed.
+    getTrainingsSnapshotForUser(data.uid)
+      .then(snapshot => {
+        forwardTrainingDocumentsToElm(snapshot.docs);
+      });
+    return;
+  }
+
+  db.collection(`users/${data.uid}/trainings`).doc(String(data.content.id))
+    .delete()
+    .then(() => {
+      console.log('Training has been removed');
+    })
+    .catch(error => {
+      alert('Error when removing Training');
+      console.error(error);
+    });
+});
 
 function getTodayString() {
   return (new Date()).toJSON().slice(0, 10).split('-').reverse().join('.');

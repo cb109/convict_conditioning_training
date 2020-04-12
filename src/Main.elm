@@ -16,24 +16,32 @@ import Task
 
 
 ---- PORTS ----
+-- Outgoing ports
 
 
 port ask : Json.Encode.Value -> Cmd msg
 
 
-port receive : (Json.Encode.Value -> msg) -> Sub msg
-
-
 port signIn : () -> Cmd msg
-
-
-port signInInfo : (Json.Encode.Value -> msg) -> Sub msg
 
 
 port signOut : () -> Cmd msg
 
 
 port saveTraining : Json.Encode.Value -> Cmd msg
+
+
+port removeTraining : Json.Encode.Value -> Cmd msg
+
+
+
+-- Incoming ports
+
+
+port receive : (Json.Encode.Value -> msg) -> Sub msg
+
+
+port signInInfo : (Json.Encode.Value -> msg) -> Sub msg
 
 
 port receiveTrainings : (Json.Encode.Value -> msg) -> Sub msg
@@ -233,7 +241,9 @@ idToExercise =
 
 getTrainingLabel : Training -> String
 getTrainingLabel training =
-    (Maybe.withDefault (Exercise 0 "" []) (Dict.get training.exerciseId idToExercise)).name
+    (Maybe.withDefault (Exercise 0 "" [])
+        (Dict.get training.exerciseId idToExercise)
+    ).name
 
 
 getTrainingLevel : Training -> Int
@@ -251,7 +261,8 @@ getTrainingSublabel : Training -> String
 getTrainingSublabel training =
     let
         exercise =
-            Maybe.withDefault (Exercise 0 "" []) (Dict.get training.exerciseId idToExercise)
+            Maybe.withDefault (Exercise 0 "" [])
+                (Dict.get training.exerciseId idToExercise)
 
         levelIndex =
             getTrainingLevelIndex training
@@ -338,7 +349,11 @@ update msg model =
                     ( { model | userData = Just value }, Cmd.none )
 
                 Err error ->
-                    ( { model | error = messageToError <| Json.Decode.errorToString error }, Cmd.none )
+                    ( { model
+                        | error = messageToError <| Json.Decode.errorToString error
+                      }
+                    , Cmd.none
+                    )
 
         LogOut ->
             ( { model | userData = Maybe.Nothing }, signOut () )
@@ -349,7 +364,11 @@ update msg model =
                     ( { model | trainings = List.reverse value }, Cmd.none )
 
                 Err error ->
-                    ( { model | error = messageToError <| Json.Decode.errorToString error }, Cmd.none )
+                    ( { model
+                        | error = messageToError <| Json.Decode.errorToString error
+                      }
+                    , Cmd.none
+                    )
 
         AskForToday ->
             ( model, ask <| Json.Encode.string "today" )
@@ -450,7 +469,11 @@ update msg model =
                     )
 
         DeleteTraining training ->
-            ( { model | trainings = List.filter (\t -> t.id /= training.id) model.trainings }, Cmd.none )
+            ( { model
+                | trainings = List.filter (\t -> t.id /= training.id) model.trainings
+              }
+            , removeTraining <| trainingEncoder model training
+            )
 
 
 generateNewTrainingId : List Training -> Int
@@ -638,7 +661,10 @@ viewDropdownExercise model =
         , div [ class "dropdown-menu", id "dropdown-menu" ]
             [ div
                 [ class "dropdown-content" ]
-                (List.map (viewDropdownItemExercise model.chosenExercise) model.exercises)
+                (List.map
+                    (viewDropdownItemExercise model.chosenExercise)
+                    model.exercises
+                )
             ]
         ]
 
@@ -665,7 +691,10 @@ viewDropdownLevel model =
             ]
         , div [ class "dropdown-menu", id "dropdown-menu" ]
             [ div [ class "dropdown-content" ]
-                (List.indexedMap (viewDropdownItemLevel model.chosenLevel) model.chosenExercise.levels)
+                (List.indexedMap
+                    (viewDropdownItemLevel model.chosenLevel)
+                    model.chosenExercise.levels
+                )
             ]
         ]
 
@@ -696,9 +725,15 @@ viewTransformingAddButton : Model -> Html Msg
 viewTransformingAddButton model =
     if model.showDropdowns then
         div [ class "columns is-gapless has-text-centered is-centered is-vcentered has-margin-top-7" ]
-            [ div [ class "column is-narrow has-margin-top-7" ] [ viewDropdownExercise model ]
-            , div [ class "column is-narrow has-margin-top-7" ] [ viewDropdownLevel model ]
-            , div [ class "column is-narrow has-margin-top-7" ] [ viewButtonsAddExerciseConfirmAbort model ]
+            [ div [ class "column is-narrow has-margin-top-7" ]
+                [ viewDropdownExercise model
+                ]
+            , div [ class "column is-narrow has-margin-top-7" ]
+                [ viewDropdownLevel model
+                ]
+            , div [ class "column is-narrow has-margin-top-7" ]
+                [ viewButtonsAddExerciseConfirmAbort model
+                ]
             ]
 
     else
@@ -733,14 +768,14 @@ viewTraining amountTrainings index training =
     div []
         [ div [ class "has-margin-bottom-7" ]
             [ div [ class "is-size-5 has-text-grey-light" ]
-                [ text (String.fromInt training.id ++ " " ++ training.date) ]
+                [ text training.date ]
             ]
         , div [ class "columns" ]
             [ div [ class "column is-two-fifths" ]
                 [ div [ class "columns is-mobile" ]
                     [ div
                         [ class "column is-narrow clickable deleteable"
-                        , onClick (deleteTraining training)
+                        , onClick (DeleteTraining training)
                         ]
                         [ p
                             [ class "title is-1  has-text-grey-lighter" ]
@@ -789,21 +824,11 @@ viewTrainingRepetition training index repetition =
         ]
 
 
-deleteTraining : Training -> Msg
-deleteTraining training =
-    DeleteTraining training
-
-
-addRepetition : Training -> Msg
-addRepetition training =
-    AddRepetition training 0
-
-
 viewTrainingAddRepetitionButton : Training -> Html Msg
 viewTrainingAddRepetitionButton training =
     button
         [ class "button is-success is-inverted has-margin-bottom-7"
-        , onClick (addRepetition training)
+        , onClick (AddRepetition training 0)
         ]
         [ span [ class "icon" ]
             [ i [ class "fas fa-plus" ]
@@ -825,7 +850,10 @@ viewTrainingsList model =
             [ div [ class "box has-margin-left-6" ]
                 [ ul []
                     [ li []
-                        (List.indexedMap (viewTraining (List.length model.trainings)) model.trainings)
+                        (List.indexedMap
+                            (viewTraining (List.length model.trainings))
+                            model.trainings
+                        )
                     ]
                 ]
             ]
