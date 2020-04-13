@@ -731,7 +731,7 @@ viewButtonsAddExerciseConfirmAbort model =
         shouldDisableAddTrainingButton =
             model.chosenDate == "" || model.chosenLevel == defaultLevel
     in
-    div [ class "field is-grouped is-centered" ]
+    div [ class "buttons is-centered" ]
         [ button
             [ class "button is-medium is-danger is-rounded has-margin-right-7"
             , onClick ToggleShowDropdowns
