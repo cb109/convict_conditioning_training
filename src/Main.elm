@@ -801,8 +801,8 @@ viewTransformingAddButton model =
             ]
 
 
-viewTraining : Int -> Int -> Training -> Html Msg
-viewTraining amountTrainings index training =
+viewTraining : List Training -> Int -> Training -> Html Msg
+viewTraining allTrainings index training =
     let
         label =
             getTrainingLabel training
@@ -814,7 +814,7 @@ viewTraining amountTrainings index training =
             getTrainingSublabel training
 
         isLast =
-            index == amountTrainings - 1
+            index == List.length allTrainings - 1
 
         divider =
             if isLast then
@@ -900,9 +900,6 @@ viewTrainingAddRepetitionButton training =
 viewTrainingsList : Model -> Html Msg
 viewTrainingsList model =
     let
-        amountTrainings =
-            List.length model.trainings
-
         sortedTrainings =
             List.reverse (List.sortBy .date model.trainings)
     in
@@ -915,7 +912,7 @@ viewTrainingsList model =
             [ div [ class "box has-margin-left-6" ]
                 [ ul []
                     [ li []
-                        (List.indexedMap (viewTraining amountTrainings) sortedTrainings)
+                        (List.indexedMap (viewTraining sortedTrainings) sortedTrainings)
                     ]
                 ]
             ]
