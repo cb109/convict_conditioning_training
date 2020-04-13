@@ -838,8 +838,14 @@ viewTraining allTrainings index training =
         addBottomSpacing =
             previousTraining == defaultTraining || previousTraining.date /= training.date
 
-        amountRepetitions =
+        allRepetitionsFromTraining =
             List.sum training.repetitions
+
+        trainingsOnSameDay =
+            List.filter (\t -> t.date == training.date) allTrainings
+
+        allRepetitionsOnSameDay =
+            List.sum (List.map (\t -> List.sum t.repetitions) trainingsOnSameDay)
     in
     div
         [ class "box has-margin-left-6 has-margin-right-6"
@@ -851,7 +857,13 @@ viewTraining allTrainings index training =
         [ if showDateHeader then
             div [ class "columns" ]
                 [ div [ class "column has-text-grey-darker is-size-5" ]
-                    [ text (formatDateStringForDisplay training.date) ]
+                    [ text (formatDateStringForDisplay training.date)
+                    , span
+                        [ class "has-text-grey-light is-pulled-right"
+                        , title ("Overall: " ++ String.fromInt allRepetitionsOnSameDay)
+                        ]
+                        [ text (String.fromInt allRepetitionsOnSameDay) ]
+                    ]
                 ]
 
           else
@@ -875,9 +887,9 @@ viewTraining allTrainings index training =
                         ]
                     , div
                         [ class "column is-narrow has-text-grey-light has-margin-top-7"
-                        , title ("Overall: " ++ String.fromInt amountRepetitions)
+                        , title ("Overall: " ++ String.fromInt allRepetitionsFromTraining)
                         ]
-                        [ text (String.fromInt amountRepetitions) ]
+                        [ text (String.fromInt allRepetitionsFromTraining) ]
                     ]
                 ]
             , div [ class "column" ]
