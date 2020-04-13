@@ -842,7 +842,7 @@ viewTraining allTrainings index training =
         ]
         [ if showDateHeader then
             div [ class "has-margin-bottom-7" ]
-                [ div [ class "is-size-5 has-text-grey-light" ]
+                [ div [ class "is-size-4 has-text-grey" ]
                     [ text (formatDateStringForDisplay training.date) ]
                 ]
 
@@ -856,13 +856,13 @@ viewTraining allTrainings index training =
                         , onClick (DeleteTraining training)
                         ]
                         [ p
-                            [ class "title is-1  has-text-grey-lighter" ]
+                            [ class "title is-2  has-text-grey-lighter" ]
                             [ text level ]
                         ]
                     , div [ class "column" ]
-                        [ p [ class "title is-4" ]
+                        [ p [ class "title is-5" ]
                             [ text label ]
-                        , p [ class "subtitle is-6" ]
+                        , p [ class "subtitle is-7" ]
                             [ text sublabel ]
                         ]
                     ]
@@ -911,8 +911,6 @@ viewTrainingAddRepetitionButton training =
             [ i [ class "fas fa-plus" ]
                 []
             ]
-        , span []
-            [ text "Add Set" ]
         ]
 
 
