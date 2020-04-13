@@ -899,6 +899,13 @@ viewTrainingAddRepetitionButton training =
 
 viewTrainingsList : Model -> Html Msg
 viewTrainingsList model =
+    let
+        amountTrainings =
+            List.length model.trainings
+
+        sortedTrainings =
+            List.reverse (List.sortBy .date model.trainings)
+    in
     if List.length model.trainings == 0 then
         div [ class "has-text-grey has-text-centered" ]
             [ text "You have not tracked any exercises so far" ]
@@ -908,10 +915,7 @@ viewTrainingsList model =
             [ div [ class "box has-margin-left-6" ]
                 [ ul []
                     [ li []
-                        (List.indexedMap
-                            (viewTraining (List.length model.trainings))
-                            (List.reverse (List.sortBy .date model.trainings))
-                        )
+                        (List.indexedMap (viewTraining amountTrainings) sortedTrainings)
                     ]
                 ]
             ]
