@@ -837,13 +837,13 @@ viewTraining allTrainings index training =
             isLast || not showDateHeader
     in
     div
-        [ class "box is-radiusless has-padding-6"
+        [ class "box is-radiusless has-margin-left-6 has-margin-right-6"
         , classList
-            [ ( "is-marginless", not addBottomSpacing ) ]
+            [ ( "has-margin-bottom-0", not addBottomSpacing ) ]
         ]
         [ if showDateHeader then
             div [ class "columns" ]
-                [ div [ class "is-size-5 has-text-grey-dark" ]
+                [ div [ class "column is-paddingless has-text-grey-dark is-size-5" ]
                     [ text (formatDateStringForDisplay training.date) ]
                 ]
 
@@ -958,7 +958,7 @@ viewBody model =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ style "background-color" "whitesmoke" ]
         [ viewError model
         , viewHeader model
         , if model.userData == Maybe.Nothing then
