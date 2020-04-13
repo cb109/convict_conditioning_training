@@ -628,6 +628,7 @@ viewButtonAddExercise : Html Msg
 viewButtonAddExercise =
     button
         [ class "button is-medium is-success is-inverted"
+        , title "Add Exercise"
         , onClick ToggleShowDropdowns
         ]
         [ span [ class "icon" ]
@@ -905,6 +906,7 @@ viewTrainingAddRepetitionButton : Training -> Html Msg
 viewTrainingAddRepetitionButton training =
     button
         [ class "button is-success is-inverted has-margin-bottom-7"
+        , title "Add Set"
         , onClick (AddRepetition training 0)
         ]
         [ span [ class "icon" ]
