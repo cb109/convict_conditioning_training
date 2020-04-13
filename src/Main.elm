@@ -837,6 +837,9 @@ viewTraining allTrainings index training =
 
         addBottomSpacing =
             isLast || not showDateHeader
+
+        amountRepetitions =
+            List.sum training.repetitions
     in
     div
         [ class "box has-margin-left-6 has-margin-right-6"
@@ -870,6 +873,11 @@ viewTraining allTrainings index training =
                         , p [ class "subtitle is-7" ]
                             [ text sublabel ]
                         ]
+                    , div
+                        [ class "column is-narrow has-text-grey-light"
+                        , title ("Overall: " ++ String.fromInt amountRepetitions)
+                        ]
+                        [ text (String.fromInt amountRepetitions) ]
                     ]
                 ]
             , div [ class "column" ]
