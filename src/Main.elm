@@ -627,7 +627,7 @@ viewHeader model =
 viewButtonAddExercise : Html Msg
 viewButtonAddExercise =
     button
-        [ class "button is-medium is-success is-inverted"
+        [ class "button is-medium is-success is-rounded"
         , title "Add Exercise"
         , onClick ToggleShowDropdowns
         ]
@@ -733,14 +733,14 @@ viewButtonsAddExerciseConfirmAbort model =
     in
     div [ class "buttons is-centered" ]
         [ button
-            [ class "button is-medium is-danger is-inverted"
+            [ class "button is-medium is-danger is-rounded"
             , onClick ToggleShowDropdowns
             ]
             [ span [ class "icon" ] [ i [ class "fas fa-times" ] [] ]
             , span [] [ text "Close" ]
             ]
         , button
-            [ class "button is-medium is-success is-inverted"
+            [ class "button is-medium is-success is-rounded"
             , disabled shouldDisableAddTrainingButton
             , onClick (AddTraining model.chosenDate model.chosenExercise model.chosenLevel)
             ]
@@ -793,23 +793,25 @@ viewDateInput model =
 
 viewTransformingAddButton : Model -> Html Msg
 viewTransformingAddButton model =
-    if model.showDropdowns then
-        div [ class "columns is-gapless has-text-centered is-centered is-vcentered has-margin-top-7" ]
-            [ div [ class "column is-narrow has-margin-top-7 has-margin-right-7" ]
-                [ viewDateInput model ]
-            , div [ class "column is-narrow has-margin-top-7 has-margin-right-7" ]
-                [ viewDropdownExercise model ]
-            , div [ class "column is-narrow has-margin-top-7 has-margin-right-7" ]
-                [ viewDropdownLevel model ]
-            , div [ class "column is-narrow has-margin-top-7" ]
-                [ viewButtonsAddExerciseConfirmAbort model ]
-            ]
+    div [ class "box has-margin-left-6 has-margin-right-6" ]
+        [ if model.showDropdowns then
+            div
+                [ class "columns is-gapless has-text-centered is-centered is-vcentered has-margin-top-7" ]
+                [ div [ class "column is-narrow has-margin-top-7 has-margin-right-7" ]
+                    [ viewDateInput model ]
+                , div [ class "column is-narrow has-margin-top-7 has-margin-right-7" ]
+                    [ viewDropdownExercise model ]
+                , div [ class "column is-narrow has-margin-top-7 has-margin-right-7" ]
+                    [ viewDropdownLevel model ]
+                , div [ class "column is-narrow has-margin-top-7" ]
+                    [ viewButtonsAddExerciseConfirmAbort model ]
+                ]
 
-    else
-        div [ class "level" ]
-            [ div [ class "level-item has-margin-top-6" ]
-                [ viewButtonAddExercise ]
-            ]
+          else
+            div [ class "has-text-centered" ]
+                [ viewButtonAddExercise
+                ]
+        ]
 
 
 viewTraining : List Training -> Int -> Training -> Html Msg
@@ -837,13 +839,15 @@ viewTraining allTrainings index training =
             isLast || not showDateHeader
     in
     div
-        [ class "box is-radiusless has-margin-left-6 has-margin-right-6"
+        [ class "box has-margin-left-6 has-margin-right-6"
         , classList
-            [ ( "has-margin-bottom-0", not addBottomSpacing ) ]
+            [ ( "has-margin-top-0 has-no-border-top", addBottomSpacing )
+            , ( "has-margin-bottom-0 has-no-border-bottom", not addBottomSpacing )
+            ]
         ]
         [ if showDateHeader then
             div [ class "columns" ]
-                [ div [ class "column is-paddingless has-text-grey-dark is-size-5" ]
+                [ div [ class "column has-text-grey-darker is-size-5" ]
                     [ text (formatDateStringForDisplay training.date) ]
                 ]
 
@@ -948,7 +952,7 @@ viewBody model =
     section []
         [ div
             [ class "container"
-            , style "max-width" "720px"
+            , style "max-width" "840px"
             ]
             [ viewTransformingAddButton model
             , viewTrainingsList model
@@ -958,7 +962,7 @@ viewBody model =
 
 view : Model -> Html Msg
 view model =
-    div [ style "background-color" "whitesmoke" ]
+    div [ style "background-color" "#3298dc" ]
         [ viewError model
         , viewHeader model
         , if model.userData == Maybe.Nothing then
