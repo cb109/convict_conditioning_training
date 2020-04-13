@@ -95,6 +95,7 @@ type alias Model =
     , dropdownActiveExercise : Bool
     , dropdownActiveLevel : Bool
     , showDropdowns : Bool
+    , chosenDate : String
     , chosenExercise : Exercise
     , chosenLevel : Level
     , trainings : List Training
@@ -303,6 +304,7 @@ init =
       , dropdownActiveExercise = False
       , dropdownActiveLevel = False
       , showDropdowns = False
+      , chosenDate = ""
       , chosenExercise = defaultExercise
       , chosenLevel = defaultLevel
       , trainings = trainings
@@ -326,9 +328,10 @@ type Msg
     | ToggleShowDropdowns
     | ToggleDropdownExercise
     | ToggleDropdownLevel
+    | SelectDate String
     | SelectExercise Exercise
     | SelectLevel Level
-    | AddTraining Exercise Level
+    | AddTraining String Exercise Level
     | AddRepetition Training Int
     | UpdateRepetition Training Int String
     | DeleteTraining Training
@@ -376,7 +379,7 @@ update msg model =
         ReceivedToday result ->
             case result of
                 Ok value ->
-                    ( { model | today = value }, Cmd.none )
+                    ( { model | today = value, chosenDate = value }, Cmd.none )
 
                 Err error ->
                     ( model, Cmd.none )
@@ -404,6 +407,13 @@ update msg model =
             , Cmd.none
             )
 
+        SelectDate dateString ->
+            ( { model
+                | chosenDate = dateString
+              }
+            , Cmd.none
+            )
+
         SelectExercise exercise ->
             ( { model
                 | chosenExercise = exercise
@@ -419,10 +429,10 @@ update msg model =
             , Cmd.none
             )
 
-        AddTraining exercise level ->
+        AddTraining dateString exercise level ->
             let
                 training =
-                    Training (generateNewTrainingId model.trainings) model.today exercise.id level.id []
+                    Training (generateNewTrainingId model.trainings) dateString exercise.id level.id []
             in
             ( { model
                 | trainings = training :: model.trainings
@@ -554,6 +564,11 @@ deleteRepetitionFromTraining model training repetitionIndex =
 ---- VIEW ----
 
 
+nothing : Html Msg
+nothing =
+    text ""
+
+
 viewLoginLogoutButtons : Model -> Html Msg
 viewLoginLogoutButtons model =
     let
@@ -643,7 +658,7 @@ viewDropdownItemLevel chosenLevel index level =
 viewDropdownExercise : Model -> Html Msg
 viewDropdownExercise model =
     div
-        [ class "dropdown has-margin-right-7"
+        [ class "dropdown"
         , classList
             [ ( "is-active", model.dropdownActiveExercise ) ]
         , onClick ToggleDropdownExercise
@@ -672,7 +687,7 @@ viewDropdownExercise model =
 viewDropdownLevel : Model -> Html Msg
 viewDropdownLevel model =
     div
-        [ class "dropdown has-margin-right-7"
+        [ class "dropdown"
         , classList
             [ ( "is-active", model.dropdownActiveLevel )
             , ( "is-disabled", model.chosenExercise == defaultExercise )
@@ -712,7 +727,7 @@ viewButtonsAddExerciseConfirmAbort model =
         , button
             [ class "button is-medium is-success is-inverted"
             , disabled (model.chosenLevel == defaultLevel)
-            , onClick (AddTraining model.chosenExercise model.chosenLevel)
+            , onClick (AddTraining model.chosenDate model.chosenExercise model.chosenLevel)
             ]
             [ span [ class "icon" ]
                 [ i [ class "fas fa-check" ] [] ]
@@ -721,19 +736,57 @@ viewButtonsAddExerciseConfirmAbort model =
         ]
 
 
+{-| Convert '2020-03-14' -> '14.03.2020'
+-}
+formatDateStringForDisplay : String -> String
+formatDateStringForDisplay dateString =
+    let
+        yearMonthDayList =
+            String.split "-" dateString
+
+        year =
+            Maybe.withDefault "DD" (List.head yearMonthDayList)
+
+        monthDayList =
+            Maybe.withDefault [] (List.tail yearMonthDayList)
+
+        month =
+            Maybe.withDefault "MM" (List.head monthDayList)
+
+        dayList =
+            Maybe.withDefault [] (List.tail monthDayList)
+
+        day =
+            Maybe.withDefault "YYYY" (List.head dayList)
+    in
+    day ++ "." ++ month ++ "." ++ year
+
+
+viewDateInput : Model -> Html Msg
+viewDateInput model =
+    div []
+        [ input
+            [ class "input"
+            , type_ "date"
+            , value model.chosenDate
+            , onChange SelectDate
+            ]
+            []
+        ]
+
+
 viewTransformingAddButton : Model -> Html Msg
 viewTransformingAddButton model =
     if model.showDropdowns then
         div [ class "columns is-gapless has-text-centered is-centered is-vcentered has-margin-top-7" ]
-            [ div [ class "column is-narrow has-margin-top-7" ]
-                [ viewDropdownExercise model
-                ]
+            [ div [ class "column is-narrow has-margin-top-7 has-margin-right-7" ]
+                [ viewDateInput model ]
+            , div [ class "column is-narrow has-margin-top-7 has-margin-right-7" ]
+                [ viewDropdownExercise model ]
+            , div [ class "column is-narrow has-margin-top-7 has-margin-right-7" ]
+                [ viewDropdownLevel model ]
             , div [ class "column is-narrow has-margin-top-7" ]
-                [ viewDropdownLevel model
-                ]
-            , div [ class "column is-narrow has-margin-top-7" ]
-                [ viewButtonsAddExerciseConfirmAbort model
-                ]
+                [ viewButtonsAddExerciseConfirmAbort model ]
             ]
 
     else
@@ -760,7 +813,7 @@ viewTraining amountTrainings index training =
 
         divider =
             if isLast then
-                span [] []
+                nothing
 
             else
                 hr [] []
@@ -768,7 +821,7 @@ viewTraining amountTrainings index training =
     div []
         [ div [ class "has-margin-bottom-7" ]
             [ div [ class "is-size-5 has-text-grey-light" ]
-                [ text training.date ]
+                [ text (formatDateStringForDisplay training.date) ]
             ]
         , div [ class "columns" ]
             [ div [ class "column is-two-fifths" ]
@@ -868,7 +921,7 @@ viewError model =
             ]
 
     else
-        span [] []
+        nothing
 
 
 viewBody : Model -> Html Msg
@@ -891,7 +944,7 @@ view model =
         [ viewError model
         , viewHeader model
         , if model.userData == Maybe.Nothing then
-            span [] []
+            nothing
 
           else
             viewBody model

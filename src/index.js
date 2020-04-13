@@ -144,8 +144,9 @@ app.ports.removeTraining.subscribe(data => {
     });
 });
 
+/** Return a datestring like '2019-12-01' */
 function getTodayString() {
-  return (new Date()).toJSON().slice(0, 10).split('-').reverse().join('.');
+  return (new Date()).toJSON().slice(0, 10);
 }
 
 app.ports.ask.subscribe(what => {
