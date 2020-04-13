@@ -911,7 +911,7 @@ viewTrainingsList model =
                     [ li []
                         (List.indexedMap
                             (viewTraining (List.length model.trainings))
-                            model.trainings
+                            (List.reverse (List.sortBy .date model.trainings))
                         )
                     ]
                 ]
