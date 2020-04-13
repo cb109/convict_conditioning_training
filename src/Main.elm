@@ -731,9 +731,9 @@ viewButtonsAddExerciseConfirmAbort model =
         shouldDisableAddTrainingButton =
             model.chosenDate == "" || model.chosenLevel == defaultLevel
     in
-    div [ class "buttons is-centered" ]
+    div [ class "field is-grouped is-centered" ]
         [ button
-            [ class "button is-medium is-danger is-rounded"
+            [ class "button is-medium is-danger is-rounded has-margin-right-7"
             , onClick ToggleShowDropdowns
             ]
             [ span [ class "icon" ] [ i [ class "fas fa-times" ] [] ]
@@ -826,17 +826,17 @@ viewTraining allTrainings index training =
         sublabel =
             getTrainingSublabel training
 
-        isLast =
-            index == List.length allTrainings - 1
-
         nextTraining =
             Maybe.withDefault defaultTraining (ListExtra.getAt (index - 1) allTrainings)
+
+        previousTraining =
+            Maybe.withDefault defaultTraining (ListExtra.getAt (index + 1) allTrainings)
 
         showDateHeader =
             nextTraining == defaultTraining || nextTraining.date /= training.date
 
         addBottomSpacing =
-            isLast || not showDateHeader
+            previousTraining == defaultTraining || previousTraining.date /= training.date
 
         amountRepetitions =
             List.sum training.repetitions
@@ -844,7 +844,7 @@ viewTraining allTrainings index training =
     div
         [ class "box has-margin-left-6 has-margin-right-6"
         , classList
-            [ ( "has-margin-top-0 has-no-border-top", addBottomSpacing )
+            [ ( "has-margin-top-0 has-no-border-top", not showDateHeader )
             , ( "has-margin-bottom-0 has-no-border-bottom", not addBottomSpacing )
             ]
         ]
@@ -874,7 +874,7 @@ viewTraining allTrainings index training =
                             [ text sublabel ]
                         ]
                     , div
-                        [ class "column is-narrow has-text-grey-light"
+                        [ class "column is-narrow has-text-grey-light has-margin-top-7"
                         , title ("Overall: " ++ String.fromInt amountRepetitions)
                         ]
                         [ text (String.fromInt amountRepetitions) ]
