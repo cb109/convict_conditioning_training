@@ -714,13 +714,12 @@ viewDropdownLevel model =
         ]
 
 
-shouldDisableAddTrainingButton : Model -> Bool
-shouldDisableAddTrainingButton model =
-    model.chosenDate == "" || model.chosenLevel == defaultLevel
-
-
 viewButtonsAddExerciseConfirmAbort : Model -> Html Msg
 viewButtonsAddExerciseConfirmAbort model =
+    let
+        shouldDisableAddTrainingButton =
+            model.chosenDate == "" || model.chosenLevel == defaultLevel
+    in
     div [ class "buttons is-centered" ]
         [ button
             [ class "button is-medium is-danger is-inverted"
@@ -731,7 +730,7 @@ viewButtonsAddExerciseConfirmAbort model =
             ]
         , button
             [ class "button is-medium is-success is-inverted"
-            , disabled (shouldDisableAddTrainingButton model)
+            , disabled shouldDisableAddTrainingButton
             , onClick (AddTraining model.chosenDate model.chosenExercise model.chosenLevel)
             ]
             [ span [ class "icon" ]
