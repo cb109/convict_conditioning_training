@@ -123,6 +123,16 @@ defaultExercise =
     }
 
 
+defaultTraining : Training
+defaultTraining =
+    { id = 0
+    , date = ""
+    , exerciseId = 0
+    , levelId = 0
+    , repetitions = []
+    }
+
+
 exercises : List Exercise
 exercises =
     [ { id = 1
@@ -277,7 +287,7 @@ getTrainingById model trainingId =
         idToTraining =
             DictExtra.fromListBy .id model.trainings
     in
-    Maybe.withDefault (Training 0 "" 0 0 []) (Dict.get trainingId idToTraining)
+    Maybe.withDefault defaultTraining (Dict.get trainingId idToTraining)
 
 
 {-| Emit a message e.g. during startup
@@ -816,18 +826,28 @@ viewTraining allTrainings index training =
         isLast =
             index == List.length allTrainings - 1
 
-        divider =
-            if isLast then
-                nothing
+        nextTraining =
+            Maybe.withDefault defaultTraining (ListExtra.getAt (index - 1) allTrainings)
 
-            else
-                hr [] []
+        showDateHeader =
+            nextTraining == defaultTraining || nextTraining.date /= training.date
+
+        addBottomSpacing =
+            isLast || not showDateHeader
     in
-    div []
-        [ div [ class "has-margin-bottom-7" ]
-            [ div [ class "is-size-5 has-text-grey-light" ]
-                [ text (formatDateStringForDisplay training.date) ]
-            ]
+    div
+        [ class "box is-radiusless"
+        , classList
+            [ ( "is-marginless", not addBottomSpacing ) ]
+        ]
+        [ if showDateHeader then
+            div [ class "has-margin-bottom-7" ]
+                [ div [ class "is-size-5 has-text-grey-light" ]
+                    [ text (formatDateStringForDisplay training.date) ]
+                ]
+
+          else
+            nothing
         , div [ class "columns" ]
             [ div [ class "column is-two-fifths" ]
                 [ div [ class "columns is-mobile" ]
@@ -852,7 +872,6 @@ viewTraining allTrainings index training =
                     (viewTrainingTags training)
                 ]
             ]
-        , divider
         ]
 
 
@@ -909,13 +928,7 @@ viewTrainingsList model =
 
     else
         div []
-            [ div [ class "box has-margin-left-6" ]
-                [ ul []
-                    [ li []
-                        (List.indexedMap (viewTraining sortedTrainings) sortedTrainings)
-                    ]
-                ]
-            ]
+            (List.indexedMap (viewTraining sortedTrainings) sortedTrainings)
 
 
 viewError : Model -> Html Msg
@@ -938,7 +951,6 @@ viewBody model =
             , style "max-width" "720px"
             ]
             [ viewTransformingAddButton model
-            , hr [] []
             , viewTrainingsList model
             ]
         ]
