@@ -714,6 +714,11 @@ viewDropdownLevel model =
         ]
 
 
+shouldDisableAddTrainingButton : Model -> Bool
+shouldDisableAddTrainingButton model =
+    model.chosenDate == "" || model.chosenLevel == defaultLevel
+
+
 viewButtonsAddExerciseConfirmAbort : Model -> Html Msg
 viewButtonsAddExerciseConfirmAbort model =
     div [ class "buttons is-centered" ]
@@ -726,7 +731,7 @@ viewButtonsAddExerciseConfirmAbort model =
             ]
         , button
             [ class "button is-medium is-success is-inverted"
-            , disabled (model.chosenLevel == defaultLevel)
+            , disabled (shouldDisableAddTrainingButton model)
             , onClick (AddTraining model.chosenDate model.chosenExercise model.chosenLevel)
             ]
             [ span [ class "icon" ]
@@ -745,7 +750,7 @@ formatDateStringForDisplay dateString =
             String.split "-" dateString
 
         year =
-            Maybe.withDefault "DD" (List.head yearMonthDayList)
+            Maybe.withDefault "YYYY" (List.head yearMonthDayList)
 
         monthDayList =
             Maybe.withDefault [] (List.tail yearMonthDayList)
@@ -757,7 +762,7 @@ formatDateStringForDisplay dateString =
             Maybe.withDefault [] (List.tail monthDayList)
 
         day =
-            Maybe.withDefault "YYYY" (List.head dayList)
+            Maybe.withDefault "DD" (List.head dayList)
     in
     day ++ "." ++ month ++ "." ++ year
 
