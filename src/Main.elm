@@ -837,13 +837,13 @@ viewTraining allTrainings index training =
             isLast || not showDateHeader
     in
     div
-        [ class "box is-radiusless"
+        [ class "box is-radiusless has-padding-6"
         , classList
             [ ( "is-marginless", not addBottomSpacing ) ]
         ]
         [ if showDateHeader then
-            div [ class "has-margin-bottom-7" ]
-                [ div [ class "is-size-4 has-text-grey" ]
+            div [ class "columns" ]
+                [ div [ class "is-size-5 has-text-grey-dark" ]
                     [ text (formatDateStringForDisplay training.date) ]
                 ]
 
