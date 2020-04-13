@@ -767,6 +767,7 @@ viewDateInput model =
     div []
         [ input
             [ class "input"
+            , style "width" "auto"
             , type_ "date"
             , value model.chosenDate
             , onChange SelectDate
