@@ -947,11 +947,11 @@ viewTrainingsList model =
             List.reverse (List.sortBy .date model.trainings)
     in
     if List.length model.trainings == 0 then
-        div [ class "has-text-grey has-text-centered" ]
+        div [ class "has-text-white has-text-centered has-padding-bottom-6" ]
             [ text "You have not tracked any exercises so far" ]
 
     else
-        div []
+        div [class "has-padding-bottom-6"]
             (List.indexedMap (viewTraining sortedTrainings) sortedTrainings)
 
 
