@@ -101,6 +101,7 @@ type alias Model =
     , chosenDate : String
     , chosenExercise : Exercise
     , chosenLevel : Level
+    , pageLimitActive : Bool
     , trainings : List Training
     }
 
@@ -320,6 +321,7 @@ init =
       , chosenDate = ""
       , chosenExercise = defaultExercise
       , chosenLevel = defaultLevel
+      , pageLimitActive= True
       , trainings = trainings
       }
     , emitMessage AskForToday
@@ -504,7 +506,8 @@ update msg model =
                 userId =
                     (Maybe.withDefault (UserData "" "" "") model.userData).uid
             in
-            ( model, unsetPageLimit <| Json.Encode.string userId )
+            ( { model | pageLimitActive = False }
+              , unsetPageLimit <| Json.Encode.string userId )
 
 
 generateNewTrainingId : List Training -> Int
@@ -953,13 +956,16 @@ viewTrainingAddRepetitionButton training =
 
 viewUnsetPageLimitButton : Model -> Html Msg
 viewUnsetPageLimitButton model =
-    div [ class "has-text-centered" ]
-        [ div
-            [ class "button is-small is-rounded has-margin-bottom-6"
-            , onClick UnsetPageLimit
+    if model.pageLimitActive then
+        div [ class "has-text-centered" ]
+            [ div
+                [ class "button is-small is-rounded has-margin-bottom-6"
+                , onClick UnsetPageLimit
+                ]
+                [ text "Load all trainings" ]
             ]
-            [ text "Load all trainings" ]
-        ]
+    else
+        span [] []
 
 
 viewTrainingsList : Model -> Html Msg
