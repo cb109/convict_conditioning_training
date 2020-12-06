@@ -34,6 +34,9 @@ port saveTraining : Json.Encode.Value -> Cmd msg
 port removeTraining : Json.Encode.Value -> Cmd msg
 
 
+port unsetPageLimit : Json.Encode.Value -> Cmd msg
+
+
 
 -- Incoming ports
 
@@ -345,6 +348,7 @@ type Msg
     | AddRepetition Training Int
     | UpdateRepetition Training Int String
     | DeleteTraining Training
+    | UnsetPageLimit
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -494,6 +498,13 @@ update msg model =
               }
             , removeTraining <| trainingEncoder model training
             )
+
+        UnsetPageLimit ->
+            let
+                userId =
+                    (Maybe.withDefault (UserData "" "" "") model.userData).uid
+            in
+            ( model, unsetPageLimit <| Json.Encode.string userId )
 
 
 generateNewTrainingId : List Training -> Int
@@ -940,19 +951,33 @@ viewTrainingAddRepetitionButton training =
         ]
 
 
+viewUnsetPageLimitButton : Model -> Html Msg
+viewUnsetPageLimitButton model =
+    div [ class "has-text-centered" ]
+        [ div
+            [ class "button is-small is-rounded has-margin-bottom-6"
+            , onClick UnsetPageLimit
+            ]
+            [ text "Load all trainings" ]
+        ]
+
+
 viewTrainingsList : Model -> Html Msg
 viewTrainingsList model =
     let
         sortedTrainings =
             List.reverse (List.sortBy .date model.trainings)
     in
-    if List.length model.trainings == 0 then
-        div [ class "has-text-white has-text-centered has-padding-bottom-6" ]
-            [ text "You have not tracked any exercises so far" ]
+    div []
+        [ if List.length model.trainings == 0 then
+            div [ class "has-text-white has-text-centered has-padding-bottom-6" ]
+                [ text "You have not tracked any exercises so far" ]
 
-    else
-        div [class "has-padding-bottom-6"]
-            (List.indexedMap (viewTraining sortedTrainings) sortedTrainings)
+          else
+            div [ class "has-padding-bottom-6" ]
+                (List.indexedMap (viewTraining sortedTrainings) sortedTrainings)
+        , viewUnsetPageLimitButton model
+        ]
 
 
 viewError : Model -> Html Msg

@@ -11,6 +11,8 @@ import * as serviceWorker from './serviceWorker';
 // Just checking envs are defined - Debug statement
 console.log(process.env.ELM_APP_API_KEY !== undefined);
 
+let pageLimit = 24;
+
 const firebaseConfig = {
   apiKey: process.env.ELM_APP_API_KEY,
   authDomain: process.env.ELM_APP_AUTH_DOMAIN,
@@ -32,6 +34,26 @@ const app = Elm.Main.init({
 
 function prettifyJson(data) {
   return JSON.stringify(data, undefined, 2);
+}
+
+function getTrainingsSnapshotForUser(userId) {
+  console.log('Fetching trainings snapshot...');
+  return db.collection(`users/${userId}/trainings`).get();
+}
+
+function forwardTrainingDocumentsToElm(docs) {
+  const trainings = [];
+
+  docs.forEach(doc => {
+    const content = doc.data().content;
+    if (content) {
+      trainings.push(content);
+    }
+  });
+
+  app.ports.receiveTrainings.send({
+    trainings: trainings
+  });
 }
 
 app.ports.signIn.subscribe(() => {
@@ -59,25 +81,14 @@ app.ports.signOut.subscribe(() => {
   firebase.auth().signOut();
 });
 
-function getTrainingsSnapshotForUser(userId) {
-  console.log('Fetching trainings snapshot...');
-  return db.collection(`users/${userId}/trainings`).get();
-}
-
-function forwardTrainingDocumentsToElm(docs) {
-  const trainings = [];
-
-  docs.forEach(doc => {
-    const content = doc.data().content;
-    if (content) {
-      trainings.push(content);
-    }
-  });
-
-  app.ports.receiveTrainings.send({
-    trainings: trainings
-  });
-}
+app.ports.unsetPageLimit.subscribe(uid => {
+  console.log('unsetPageLimit');
+  pageLimit = null;
+  getTrainingsSnapshotForUser(uid)
+    .then(snapshot => {
+      forwardTrainingDocumentsToElm(snapshot.docs);
+    });
+});
 
 firebase.auth().onAuthStateChanged(user => {
   console.log('onAuthStateChanged');
@@ -97,7 +108,7 @@ firebase.auth().onAuthStateChanged(user => {
       });
 
     // Set up listened on new trainings
-    db.collection(`users/${user.uid}/trainings`).onSnapshot(docs => {
+    db.collection(`users/${user.uid}/trainings`).limit(pageLimit).onSnapshot(docs => {
       console.log('Received new snapshot');
       forwardTrainingDocumentsToElm(docs);
     });
