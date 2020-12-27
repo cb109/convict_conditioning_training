@@ -107,11 +107,14 @@ firebase.auth().onAuthStateChanged(user => {
         console.error(error);
       });
 
-    // Set up listened on new trainings
-    db.collection(`users/${user.uid}/trainings`).limit(pageLimit).onSnapshot(docs => {
-      console.log('Received new snapshot');
-      forwardTrainingDocumentsToElm(docs);
-    });
+    // Set up listener on new trainings
+    db.collection(`users/${user.uid}/trainings`)
+      .orderBy('content.date', 'desc')
+      .limit(pageLimit)
+      .onSnapshot(docs => {
+        console.log('Received new snapshot');
+        forwardTrainingDocumentsToElm(docs);
+      });
   }
 });
 
@@ -163,7 +166,7 @@ function getTodayString() {
 app.ports.ask.subscribe(what => {
   if (what === 'today') {
     var today = getTodayString();
-    app.ports.receive.send({today: today});
+    app.ports.receive.send({ today: today });
   }
 });
 
