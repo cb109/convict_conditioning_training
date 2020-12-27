@@ -321,7 +321,7 @@ init =
       , chosenDate = ""
       , chosenExercise = defaultExercise
       , chosenLevel = defaultLevel
-      , pageLimitActive= True
+      , pageLimitActive = True
       , trainings = trainings
       }
     , emitMessage AskForToday
@@ -507,7 +507,8 @@ update msg model =
                     (Maybe.withDefault (UserData "" "" "") model.userData).uid
             in
             ( { model | pageLimitActive = False }
-              , unsetPageLimit <| Json.Encode.string userId )
+            , unsetPageLimit <| Json.Encode.string userId
+            )
 
 
 generateNewTrainingId : List Training -> Int
@@ -964,6 +965,7 @@ viewUnsetPageLimitButton model =
                 ]
                 [ text "Load all trainings" ]
             ]
+
     else
         span [] []
 
