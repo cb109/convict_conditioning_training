@@ -27,3 +27,6 @@ input.repetition-input {
   max-width: 42px;
   background: transparent;
 }
+input.repetition-input.larger {
+  max-width: 50px;
+}

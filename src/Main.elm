@@ -108,7 +108,7 @@ type alias Model =
 
 maxRepetition : Int
 maxRepetition =
-    99
+    999
 
 
 defaultLevel : Level
@@ -537,7 +537,7 @@ addRepetitionToTraining model training repetition =
 
 updateRepetitionInTraining : Model -> Training -> Int -> Int -> Model
 updateRepetitionInTraining model training repetitionIndex newValue =
-    -- Limit value to two digits
+    -- Limit value to three digits max.
     if newValue > maxRepetition then
         model
 
@@ -929,10 +929,18 @@ viewTrainingTags training =
 
 viewTrainingRepetition : Training -> Int -> Int -> Html Msg
 viewTrainingRepetition training index repetition =
+    let
+        sizeModifier =
+            if repetition > 99 then
+                "larger"
+
+            else
+                ""
+    in
     span
         [ class "tag is-large is-paddingless" ]
         [ input
-            [ class "input repetition-input"
+            [ class ("input repetition-input " ++ sizeModifier)
             , type_ "text"
             , value (String.fromInt repetition)
             , onChange (UpdateRepetition training index)
