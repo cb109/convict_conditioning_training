@@ -21,6 +21,10 @@ This is a little progress tracker for the exercises listed in the [Convict Condi
 - Run `$ elm-app start`
 
 
+## Known Issues
+- Exercise names are currently hardcoded in german, need to be pulled from an external resource that allows adding translations to different languages
+
+
 ## Deployment
 
 - `$ elm-app build`
