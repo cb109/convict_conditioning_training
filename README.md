@@ -36,3 +36,10 @@ This is a little progress tracker for the exercises listed in the [Convict Condi
     }
   }
   ```
+- A simple deploy script could look then like:
+   ```bash
+    #!/bin/sh
+    ssh username@hostname "mkdir -p /opt/www/convict" && \
+      scp -pr build/* username@hostname:/opt/www/convict
+   ```
+   
