@@ -980,7 +980,7 @@ viewUnsetPageLimitButton model =
 
 {-| Sort Training by date DESC, then exercise ASC, then level ASC.
 
-This resemblers the order in the dropdown where we chose exercise from,
+This resembles the order in the dropdown that we chose an exercise from,
 but ensures the latest trainings sessions are on top.
 
 -}
