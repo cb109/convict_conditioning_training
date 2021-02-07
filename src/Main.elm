@@ -978,11 +978,46 @@ viewUnsetPageLimitButton model =
         span [] []
 
 
+{-| Sort Training by date DESC, then exercise ASC, then level ASC.
+
+This resemblers the order in the dropdown where we chose exercise from,
+but ensures the latest trainings sessions are on top.
+
+-}
+sortTrainings : Training -> Training -> Order
+sortTrainings a b =
+    case compare a.date b.date of
+        LT ->
+            GT
+
+        GT ->
+            LT
+
+        EQ ->
+            case compare a.exerciseId b.exerciseId of
+                LT ->
+                    LT
+
+                GT ->
+                    GT
+
+                EQ ->
+                    case compare a.levelId b.levelId of
+                        LT ->
+                            LT
+
+                        GT ->
+                            GT
+
+                        EQ ->
+                            EQ
+
+
 viewTrainingsList : Model -> Html Msg
 viewTrainingsList model =
     let
         sortedTrainings =
-            List.reverse (List.sortBy .date model.trainings)
+            List.sortWith sortTrainings model.trainings
     in
     div []
         [ if List.length model.trainings == 0 then
