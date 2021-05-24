@@ -92,6 +92,7 @@ app.ports.unsetPageLimit.subscribe(uid => {
   pageLimit = null;
   getTrainingsSnapshotForUser(uid)
     .then(snapshot => {
+      // downloadTrainingDocumentsAsJson(snapshot.docs);
       forwardTrainingDocumentsToElm(snapshot.docs);
     });
 });
@@ -167,6 +168,21 @@ app.ports.removeTraining.subscribe(data => {
 /** Return a datestring like '2019-12-01' */
 function getTodayString() {
   return (new Date()).toJSON().slice(0, 10);
+}
+
+function downloadTrainingDocumentsAsJson(docs) {
+  const allTrainings = [];
+  docs.forEach(doc => {
+    const content = doc.data().content;
+    if (content) {
+      allTrainings.push(content);
+    }
+  });
+  // Trigger download.
+  var json = JSON.stringify(allTrainings);
+  var blob = new Blob([json], {type: 'application/json'});
+  var url  = URL.createObjectURL(blob);
+  window.location = url;
 }
 
 app.ports.ask.subscribe(what => {
