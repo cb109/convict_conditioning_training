@@ -495,9 +495,7 @@ update msg model =
                     )
 
         DeleteTraining training ->
-            ( { model
-                | trainings = List.filter (\t -> t.id /= training.id) model.trainings
-              }
+            ( model
             , removeTraining <| trainingEncoder model training
             )
 
