@@ -46,4 +46,4 @@ This is a little progress tracker for the exercises listed in the [Convict Condi
     ssh username@hostname "mkdir -p /var/www/convict" && \
       scp -pr build/* username@hostname:/var/www/convict
    ```
-   
+- Finally restart your webserver e.g. `systemctl restart nginx`
