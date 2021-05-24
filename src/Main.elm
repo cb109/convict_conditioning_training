@@ -93,6 +93,7 @@ type alias Training =
 type alias Model =
     { error : ErrorData
     , today : String
+    , loggingIn : Bool
     , userData : Maybe UserData
     , exercises : List Exercise
     , dropdownActiveExercise : Bool
@@ -313,6 +314,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { error = emptyError
       , today = ""
+      , loggingIn = False
       , userData = Maybe.Nothing
       , exercises = exercises
       , dropdownActiveExercise = False
@@ -360,12 +362,12 @@ update msg model =
             ( { model | error = emptyError }, Cmd.none )
 
         LogIn ->
-            ( model, signIn () )
+            ( { model | loggingIn = True }, signIn () )
 
         LoggedInData result ->
             case result of
                 Ok value ->
-                    ( { model | userData = Just value }, Cmd.none )
+                    ( { model | userData = Just value, loggingIn = False }, Cmd.none )
 
                 Err error ->
                     ( { model
@@ -610,7 +612,13 @@ viewLoginLogoutButtons model =
 
           else
             div []
-                [ button [ class "button is-medium has-margin-top-5 is-info is-inverted" ]
+                [ button
+                    [ class "button is-medium has-margin-top-5 is-info"
+                    , classList
+                        [ ( "is-loading", model.loggingIn )
+                        , ( "is-inverted", not model.loggingIn )
+                        ]
+                    ]
                     [ span
                         [ onClick LogIn ]
                         [ text "Login with Google" ]
