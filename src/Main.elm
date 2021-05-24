@@ -84,6 +84,7 @@ type alias Exercise =
 type alias Training =
     { id : Int
     , date : String
+    , locked : Bool
     , exerciseId : Int
     , levelId : Int
     , repetitions : List Int
@@ -132,6 +133,7 @@ defaultTraining : Training
 defaultTraining =
     { id = 0
     , date = ""
+    , locked = False
     , exerciseId = 0
     , levelId = 0
     , repetitions = []
@@ -336,6 +338,7 @@ init =
 
 type Msg
     = RemoveErrorMessage
+    | NoOp
     | LogIn
     | LoggedInData (Result Json.Decode.Error UserData)
     | LogOut
@@ -350,6 +353,7 @@ type Msg
     | SelectLevel Level
     | AddTraining String Exercise Level
     | AddRepetition Training Int
+    | ToggleLocked Training
     | UpdateRepetition Training Int String
     | DeleteTraining Training
     | UnsetPageLimit
@@ -358,6 +362,9 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        NoOp ->
+            ( model, Cmd.none )
+
         RemoveErrorMessage ->
             ( { model | error = emptyError }, Cmd.none )
 
@@ -450,7 +457,7 @@ update msg model =
         AddTraining dateString exercise level ->
             let
                 training =
-                    Training (generateNewTrainingId model.trainings) dateString exercise.id level.id []
+                    Training (generateNewTrainingId model.trainings) dateString False exercise.id level.id []
             in
             ( { model
                 | trainings = training :: model.trainings
@@ -461,6 +468,18 @@ update msg model =
         AddRepetition training repetition ->
             ( addRepetitionToTraining model training repetition
             , Cmd.none
+            )
+
+        ToggleLocked training ->
+            let
+                updatedModel =
+                    toggleTrainingLocked model training
+
+                updatedTraining =
+                    getTrainingById updatedModel training.id
+            in
+            ( updatedModel
+            , saveTraining <| trainingEncoder updatedModel updatedTraining
             )
 
         UpdateRepetition training repetitionIndex value ->
@@ -514,6 +533,22 @@ update msg model =
 generateNewTrainingId : List Training -> Int
 generateNewTrainingId trainings_ =
     Maybe.withDefault 0 (List.maximum (List.map (\t -> t.id) trainings_)) + 1
+
+
+toggleTrainingLocked : Model -> Training -> Model
+toggleTrainingLocked model training =
+    let
+        updateLocked currentTraining =
+            if currentTraining.id == training.id then
+                { currentTraining | locked = not training.locked }
+
+            else
+                currentTraining
+
+        updatedTrainings =
+            List.map updateLocked model.trainings
+    in
+    { model | trainings = updatedTrainings }
 
 
 addRepetitionToTraining : Model -> Training -> Int -> Model
@@ -653,7 +688,7 @@ viewButtonAddExercise =
         , onClick ToggleShowDropdowns
         ]
         [ span [ class "icon" ]
-            [ i [ class "fas fa-plus" ]
+            [ i [ class "fas fa-fw fa-plus" ]
                 []
             ]
         , span []
@@ -700,7 +735,7 @@ viewDropdownExercise model =
                 [ span []
                     [ text model.chosenExercise.name ]
                 , span [ class "icon is-small" ]
-                    [ i [ class "fas fa-angle-down" ]
+                    [ i [ class "fas fa-fw fa-angle-down" ]
                         []
                     ]
                 ]
@@ -731,7 +766,7 @@ viewDropdownLevel model =
                 [ span []
                     [ text model.chosenLevel.name ]
                 , span [ class "icon is-small" ]
-                    [ i [ class "fas fa-angle-down" ]
+                    [ i [ class "fas fa-fw fa-angle-down" ]
                         []
                     ]
                 ]
@@ -757,7 +792,7 @@ viewButtonsAddExerciseConfirmAbort model =
             [ class "button is-medium is-danger is-rounded has-margin-right-7"
             , onClick ToggleShowDropdowns
             ]
-            [ span [ class "icon" ] [ i [ class "fas fa-times" ] [] ]
+            [ span [ class "icon" ] [ i [ class "fas fa-fw fa-times" ] [] ]
             , span [] [ text "Close" ]
             ]
         , button
@@ -766,7 +801,7 @@ viewButtonsAddExerciseConfirmAbort model =
             , onClick (AddTraining model.chosenDate model.chosenExercise model.chosenLevel)
             ]
             [ span [ class "icon" ]
-                [ i [ class "fas fa-check" ] [] ]
+                [ i [ class "fas fa-fw fa-check" ] [] ]
             , span [] [ text "Add" ]
             ]
         ]
@@ -893,8 +928,15 @@ viewTraining allTrainings index training =
             [ div [ class "column is-two-fifths" ]
                 [ div [ class "columns is-mobile" ]
                     [ div
-                        [ class "column is-narrow clickable deleteable"
-                        , onClick (DeleteTraining training)
+                        [ class "column is-narrow"
+                        , classList [ ( "clickable deleteable", not training.locked ) ]
+                        , onClick
+                            (if not training.locked then
+                                DeleteTraining training
+
+                             else
+                                NoOp
+                            )
                         ]
                         [ p
                             [ class "title is-2  has-text-grey-lighter" ]
@@ -911,6 +953,25 @@ viewTraining allTrainings index training =
                         , title ("Overall: " ++ String.fromInt allRepetitionsFromTraining)
                         ]
                         [ text (String.fromInt allRepetitionsFromTraining) ]
+                    , div
+                        [ class "column is-narrow has-margin-top-7 clickable"
+                        , onClick (ToggleLocked training)
+                        ]
+                        [ span [ classList [ ( "is-hidden", training.locked ) ] ]
+                            [ i
+                                [ class "fas fa-fw fa-lock-open has-text-grey-lighter"
+                                , title "Click to lock to avoid accidental changes"
+                                ]
+                                []
+                            ]
+                        , span [ classList [ ( "is-hidden", not training.locked ) ] ]
+                            [ i
+                                [ class "fas fa-fw fa-lock has-text-grey-light"
+                                , title "Click to unlock to be able to edit"
+                                ]
+                                []
+                            ]
+                        ]
                     ]
                 ]
             , div [ class "column" ]
@@ -930,7 +991,15 @@ viewTrainingTags training =
         reps =
             List.indexedMap mapTraining training.repetitions
     in
-    List.reverse (viewTrainingAddRepetitionButton training :: reps)
+    List.reverse
+        ((if not training.locked then
+            viewTrainingAddRepetitionButton training
+
+          else
+            nothing
+         )
+            :: reps
+        )
 
 
 viewTrainingRepetition : Training -> Int -> Int -> Html Msg
@@ -949,6 +1018,7 @@ viewTrainingRepetition training index repetition =
             [ class ("input repetition-input " ++ sizeModifier)
             , type_ "text"
             , value (String.fromInt repetition)
+            , disabled training.locked
             , onChange (UpdateRepetition training index)
             ]
             []
@@ -963,7 +1033,7 @@ viewTrainingAddRepetitionButton training =
         , onClick (AddRepetition training 0)
         ]
         [ span [ class "icon" ]
-            [ i [ class "fas fa-plus" ]
+            [ i [ class "fas fa-fw fa-plus" ]
                 []
             ]
         ]
@@ -1099,6 +1169,7 @@ trainingEncoder model training =
           , Json.Encode.object
                 [ ( "id", Json.Encode.int training.id )
                 , ( "date", Json.Encode.string training.date )
+                , ( "locked", Json.Encode.bool training.locked )
                 , ( "exerciseId", Json.Encode.int training.exerciseId )
                 , ( "levelId", Json.Encode.int training.levelId )
                 , ( "repetitions"
@@ -1122,6 +1193,7 @@ trainingDecoder =
     Json.Decode.succeed Training
         |> Json.Decode.Pipeline.required "id" Json.Decode.int
         |> Json.Decode.Pipeline.required "date" Json.Decode.string
+        |> Json.Decode.Pipeline.required "locked" Json.Decode.bool
         |> Json.Decode.Pipeline.required "exerciseId" Json.Decode.int
         |> Json.Decode.Pipeline.required "levelId" Json.Decode.int
         |> Json.Decode.Pipeline.required "repetitions" (Json.Decode.list Json.Decode.int)

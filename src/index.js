@@ -47,6 +47,12 @@ function forwardTrainingDocumentsToElm(docs) {
   docs.forEach(doc => {
     const content = doc.data().content;
     if (content) {
+
+      // TODO: Remove this once existing trainings have the new .locked <bool> field.
+      if (content.locked === undefined) {
+        content.locked = false;
+      }
+
       trainings.push(content);
     }
   });
