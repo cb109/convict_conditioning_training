@@ -92,6 +92,7 @@ app.ports.unsetPageLimit.subscribe(uid => {
   pageLimit = null;
   getTrainingsSnapshotForUser(uid)
     .then(snapshot => {
+      // iterateDocsForMigration(uid, snapshot.docs);
       // downloadTrainingDocumentsAsJson(snapshot.docs);
       forwardTrainingDocumentsToElm(snapshot.docs);
     });
@@ -125,10 +126,18 @@ firebase.auth().onAuthStateChanged(user => {
   }
 });
 
-app.ports.saveTraining.subscribe(data => {
+/**
+ * Persist Training to Firebase.
+ *
+ * data (object):
+ *   uid (str): User ID
+ *   content (object): Training document fields
+ */
+function saveTraining(data) {
   console.log(`Saving training to database: ${prettifyJson(data.content)}`);
 
-  db.collection(`users/${data.uid}/trainings`).doc(String(data.content.id))
+  db.collection(`users/${data.uid}/trainings`)
+    .doc(String(data.content.id))
     .set({
       content: data.content
     })
@@ -139,7 +148,9 @@ app.ports.saveTraining.subscribe(data => {
       alert('Error when saving Training');
       console.error(error);
     });
-});
+}
+
+app.ports.saveTraining.subscribe(saveTraining);
 
 app.ports.removeTraining.subscribe(data => {
   console.log(`Removing training from database: ${prettifyJson(data.content)}`);
@@ -154,7 +165,8 @@ app.ports.removeTraining.subscribe(data => {
     return;
   }
 
-  db.collection(`users/${data.uid}/trainings`).doc(String(data.content.id))
+  db.collection(`users/${data.uid}/trainings`)
+    .doc(String(data.content.id))
     .delete()
     .then(() => {
       console.log('Training has been removed');
@@ -168,6 +180,19 @@ app.ports.removeTraining.subscribe(data => {
 /** Return a datestring like '2019-12-01' */
 function getTodayString() {
   return (new Date()).toJSON().slice(0, 10);
+}
+
+function iterateDocsForMigration(uid, docs) {
+  docs.forEach(doc => {
+
+    // // Add new .locked = true field. Change as needed for future migrations.
+    // const content = doc.data().content;
+    // content.locked = true;
+    // const training = {uid: uid, content: content};
+    // saveTraining(training);
+
+  });
+  console.log('done');
 }
 
 function downloadTrainingDocumentsAsJson(docs) {
