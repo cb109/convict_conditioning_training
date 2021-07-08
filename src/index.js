@@ -38,11 +38,13 @@ function prettifyJson(data) {
 
 function getTrainingsSnapshotForUser(userId) {
   console.log('Fetching trainings snapshot...');
-  return db
+  let query = db
     .collection(`users/${userId}/trainings`)
-    .orderBy('content.date', 'desc')
-    .limit(pageLimit)
-    .get();
+    .orderBy('content.date', 'desc');
+  if (pageLimit !== null) {
+    query = query.limit(pageLimit);
+  }
+  return query.get();
 }
 
 function forwardTrainingDocumentsToElm(docs) {
