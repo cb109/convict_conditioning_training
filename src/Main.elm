@@ -297,6 +297,26 @@ getTrainingById model trainingId =
     Maybe.withDefault defaultTraining (Dict.get trainingId idToTraining)
 
 
+getExerciseById : Int -> Exercise
+getExerciseById exerciseId =
+    Maybe.withDefault defaultExercise (Dict.get exerciseId idToExercise)
+
+
+getExerciseLevelById : Int -> Int -> Level
+getExerciseLevelById exerciseId levelId =
+    let
+        exercise =
+            Maybe.withDefault defaultExercise (Dict.get exerciseId idToExercise)
+
+        idToLevel =
+            DictExtra.fromListBy .id exercise.levels
+
+        level =
+            Maybe.withDefault defaultLevel (Dict.get levelId idToLevel)
+    in
+    level
+
+
 {-| Emit a message e.g. during startup
 
 -- <https://blog.revathskumar.com/2018/11/elm-send-command-on-init.html>
@@ -352,6 +372,7 @@ type Msg
     | SelectExercise Exercise
     | SelectLevel Level
     | AddTraining String Exercise Level
+    | CopyDateTrainingsAsEmptyToToday String
     | AddRepetition Training Int
     | ToggleLocked Training
     | UpdateRepetition Training Int String
@@ -457,12 +478,38 @@ update msg model =
         AddTraining dateString exercise level ->
             let
                 training =
-                    Training (generateNewTrainingId model.trainings) dateString False exercise.id level.id []
+                    Training
+                        (generateNewTrainingId model.trainings)
+                        dateString
+                        False
+                        exercise.id
+                        level.id
+                        []
             in
             ( { model
                 | trainings = training :: model.trainings
               }
             , saveTraining <| trainingEncoder model training
+            )
+
+        CopyDateTrainingsAsEmptyToToday dateString ->
+            let
+                newTrainings =
+                    copyDateTrainingsAsEmptyToToday model dateString
+
+                saveTrainingCommands =
+                    List.map
+                        (\training_ ->
+                            saveTraining <|
+                                trainingEncoder model training_
+                        )
+                        newTrainings
+
+                updatedTrainings =
+                    List.concat [ model.trainings, newTrainings ]
+            in
+            ( { model | trainings = updatedTrainings }
+            , Cmd.batch saveTrainingCommands
             )
 
         AddRepetition training repetition ->
@@ -530,9 +577,14 @@ update msg model =
             )
 
 
+getCurrentMaxTrainingId : List Training -> Int
+getCurrentMaxTrainingId allTrainings =
+    Maybe.withDefault 0 (List.maximum (List.map (\t -> t.id) allTrainings))
+
+
 generateNewTrainingId : List Training -> Int
-generateNewTrainingId trainings_ =
-    Maybe.withDefault 0 (List.maximum (List.map (\t -> t.id) trainings_)) + 1
+generateNewTrainingId allTrainings =
+    getCurrentMaxTrainingId allTrainings + 1
 
 
 toggleTrainingLocked : Model -> Training -> Model
@@ -549,6 +601,30 @@ toggleTrainingLocked model training =
             List.map updateLocked model.trainings
     in
     { model | trainings = updatedTrainings }
+
+
+copyDateTrainingsAsEmptyToToday : Model -> String -> List Training
+copyDateTrainingsAsEmptyToToday model dateString =
+    let
+        trainingsOnDate =
+            List.filter (\t -> t.date == dateString) model.trainings
+
+        maxId =
+            getCurrentMaxTrainingId model.trainings
+
+        newTrainings =
+            List.indexedMap
+                (\index_ training_ ->
+                    { training_
+                        | id = maxId + index_ + 1
+                        , date = model.today
+                        , repetitions = []
+                        , locked = False
+                    }
+                )
+                trainingsOnDate
+    in
+    newTrainings
 
 
 addRepetitionToTraining : Model -> Training -> Int -> Model
@@ -888,7 +964,7 @@ viewTraining allTrainings index training =
         previousTraining =
             Maybe.withDefault defaultTraining (ListExtra.getAt (index + 1) allTrainings)
 
-        showDateHeader =
+        isTopTrainingOfDay =
             nextTraining == defaultTraining || nextTraining.date /= training.date
 
         addBottomSpacing =
@@ -900,25 +976,36 @@ viewTraining allTrainings index training =
         trainingsOnSameDay =
             List.filter (\t -> t.date == training.date) allTrainings
 
-        allRepetitionsOnSameDay =
+        summedUpRepetitionsOnSameDay =
             List.sum (List.map (\t -> List.sum t.repetitions) trainingsOnSameDay)
     in
     div
         [ class "box has-margin-left-6 has-margin-right-6"
         , classList
-            [ ( "has-margin-top-0 has-no-border-top", not showDateHeader )
+            [ ( "has-margin-top-0 has-no-border-top", not isTopTrainingOfDay )
             , ( "has-margin-bottom-0 has-no-border-bottom", not addBottomSpacing )
             ]
         ]
-        [ if showDateHeader then
+        [ if isTopTrainingOfDay then
             div [ class "columns" ]
                 [ div [ class "column has-text-grey-darker is-size-5" ]
                     [ text (formatDateStringForDisplay training.date)
-                    , span
-                        [ class "has-text-grey-light is-pulled-right"
-                        , title ("Overall: " ++ String.fromInt allRepetitionsOnSameDay)
+                    , div [ class "has-text-grey-light is-pulled-right" ]
+                        [ span
+                            [ class "has-margin-right-6"
+                            , title ("Overall: " ++ String.fromInt summedUpRepetitionsOnSameDay)
+                            ]
+                            [ text (String.fromInt summedUpRepetitionsOnSameDay) ]
+                        , span
+                            [ class "clickable has-text-grey-lighter"
+                            , title "Copy this day's exercises to a fresh set"
+                            , onClick (CopyDateTrainingsAsEmptyToToday training.date)
+                            ]
+                            [ i
+                                [ class "fas fa-fw fa-copy" ]
+                                []
+                            ]
                         ]
-                        [ text (String.fromInt allRepetitionsOnSameDay) ]
                     ]
                 ]
 
@@ -959,14 +1046,14 @@ viewTraining allTrainings index training =
                         ]
                         [ span [ classList [ ( "is-hidden", training.locked ) ] ]
                             [ i
-                                [ class "fas fa-fw fa-lock-open has-text-grey-lighter"
+                                [ class "fas fa-fw fa-lock-open has-text-grey-light"
                                 , title "Click to lock to avoid accidental changes"
                                 ]
                                 []
                             ]
                         , span [ classList [ ( "is-hidden", not training.locked ) ] ]
                             [ i
-                                [ class "fas fa-fw fa-lock has-text-grey-light"
+                                [ class "fas fa-fw fa-lock has-text-grey-lighter"
                                 , title "Click to unlock to be able to edit"
                                 ]
                                 []
