@@ -161,7 +161,9 @@ app.ports.saveTraining.subscribe(saveTraining);
 app.ports.removeTraining.subscribe(data => {
   console.log(`Removing training from database: ${prettifyJson(data.content)}`);
 
-  const confirmed = confirm('Do you really want to remove this training?');
+  const confirmed = confirm(
+    `Do you really want to remove this training from: ${data.content.date}?`
+  );
   if (!confirmed) {
     // Ensure the change in the model is reversed.
     getTrainingsSnapshotForUser(data.uid)
