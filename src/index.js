@@ -38,7 +38,11 @@ function prettifyJson(data) {
 
 function getTrainingsSnapshotForUser(userId) {
   console.log('Fetching trainings snapshot...');
-  return db.collection(`users/${userId}/trainings`).get();
+  return db
+    .collection(`users/${userId}/trainings`)
+    .orderBy('content.date', 'desc')
+    .limit(pageLimit)
+    .get();
 }
 
 function forwardTrainingDocumentsToElm(docs) {
